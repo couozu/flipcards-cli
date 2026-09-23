@@ -85,11 +85,23 @@ def run_learning():
         else:
             print(f"\n{word}\n")
         print("-" * 40)
-        print("[Space] - Show translation | [E] - Edit | [Any Digit] - Statistics | [Q] - Quit")
+        print("[Space] - Show translation | [Left/Right] - Don't know/Know | [E] - Edit | [Q] - Quit")
         
+        LEFT_KEYS = set("qwertasdfgzxcvbйцукенфывапячсми")
+        RIGHT_KEYS = set("yuiophjklnmнгшщзхъролджэтьбю")
+        
+        answered_early = False
         while True:
             ch = get_char().lower()
             if ch == ' ':
+                break
+            elif ch in LEFT_KEYS:
+                update_word(conn, word_id, known=False)
+                answered_early = True
+                break
+            elif ch in RIGHT_KEYS:
+                update_word(conn, word_id, known=True)
+                answered_early = True
                 break
             elif ch == 'e':
                 # Restore terminal to normal to accept input
@@ -117,6 +129,9 @@ def run_learning():
                 conn.close()
                 return
 
+        if answered_early:
+            continue
+
         os.system('clear')
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
@@ -128,9 +143,6 @@ def run_learning():
         
         print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [E] - Edit | [Q] - Quit")
         
-        LEFT_KEYS = set("qwertasdfgzxcvbйцукенфывапячсми")
-        RIGHT_KEYS = set("yuiophjklnmнгшщзхъролджэтьбю")
-
         while True:
             ch = get_char().lower()
             if ch in LEFT_KEYS:
