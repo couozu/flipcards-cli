@@ -1,0 +1,37 @@
+---
+name: process-spanish
+description: >-
+  Use this skill when the user asks to process a Spanish text or subtitle file to extract vocabulary for their flashcards database (vocab.db).
+---
+
+# Process Spanish Subtitles and Text
+
+This skill instructs you on how to extract vocabulary from a Spanish text file, translate it contextually, and insert it into the user's Spaced Repetition database.
+
+## Steps
+
+1. **Clarify Language Preference**
+   If the user has not specified a target translation language in their prompt, ask them what language they want the Spanish words translated into before proceeding.
+
+2. **Read the Source Text**
+   Use your file reading tools to read the provided text or subtitle file. 
+
+3. **Extract and Translate Contextually**
+   Analyze the text. Extract all unique Spanish words. Translate each word into the user's preferred target language **based on the context** of the sentence it appears in. 
+   - *Handling Clashes/Homonyms*: If the exact same Spanish word appears in multiple different contexts with completely different meanings (e.g., "banco" as a financial bank vs "banco" as a park bench), create separate entries for each meaning and provide a short `hint` in English or the target language to distinguish them (e.g. `hint: financial institution`). If there is only one meaning, leave the hint empty (`""`).
+
+4. **Prepare JSON Data**
+   Format your extracted vocabulary into a JSON array of objects. Each object must have:
+   - `word` (string): The Spanish word.
+   - `translation` (string): The contextual translation.
+   - `hint` (string): A short hint if there is a clash, otherwise `""`.
+
+5. **Insert into Database**
+   Write the JSON array to a temporary file (e.g. `/tmp/vocab.json`), and then use the helper script to safely insert it into the SQLite database:
+   ```bash
+   python .agents/skills/process-spanish/scripts/insert.py /tmp/vocab.json
+   ```
+   *Note: The helper script automatically handles duplicates and diffs against the existing database, so you don't need to worry about over-writing progress.*
+
+6. **Report**
+   Tell the user how many words were successfully processed and added, and suggest they run `python learn.py` to practice!
