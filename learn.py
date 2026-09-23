@@ -72,7 +72,7 @@ def record_time_spent(conn, delta_seconds):
     conn.commit()
 
 
-def get_stats_header(conn, due_count):
+def get_stats_header(conn, due_passive, due_active):
     c = conn.cursor()
     today_str = datetime.now().strftime("%Y-%m-%d")
     
@@ -95,9 +95,7 @@ def get_stats_header(conn, due_count):
     c.execute("SELECT COUNT(*) FROM words WHERE is_active_unlocked = 1 AND (active_ignored = 1 OR active_repetitions >= 3)")
     active_mastered = c.fetchone()[0]
     
-    line1 = f"Due: {due_count} | Done Today: {today_cards} ({format_time(today_time)}) | Total Done: {total_cards} ({format_time(total_time)})"
-    line2 = f"Mastered: {passive_mastered} pass, {active_mastered} act | Total Words: {total_active_vocab}"
-    return line1 + "\n" + line2
+    return f"Due: {due_passive}p/{due_active}a | Mast: {passive_mastered}p/{active_mastered}a | Today: {today_cards}({format_time(today_time)}) | Tot: {total_cards}({format_time(total_time)}) | DB: {total_active_vocab}" 
 
 def undo_last_action(conn, undo_stack):
     if not undo_stack:
@@ -204,12 +202,11 @@ def run_learning():
         now_iso = datetime.now().isoformat()
         
         # Get count of words due today
-        c.execute('''SELECT count(*) FROM (
-            SELECT id FROM words WHERE next_review <= ? AND passive_ignored = 0
-            UNION ALL
-            SELECT id FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ? AND active_ignored = 0
-        )''', (now_iso, now_iso))
-        due_count = c.fetchone()[0]
+c.execute("SELECT count(*) FROM words WHERE next_review <= ? AND passive_ignored = 0", (now_iso,))
+        due_passive = c.fetchone()[0]
+        c.execute("SELECT count(*) FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ? AND active_ignored = 0", (now_iso,))
+        due_active = c.fetchone()[0]
+        due_count = due_passive + due_active
         
         # Total words
         c.execute("SELECT COUNT(*) FROM words WHERE passive_ignored = 0")
@@ -258,7 +255,7 @@ def run_learning():
         back = spanish_with_article if is_active else russian_side
         
         # FRONT SCREEN
-        print(get_stats_header(conn, due_count))
+        print(get_stats_header(conn, due_passive, due_active))
         print("-" * 40)
         print(f"\n{front}\n")
         print("-" * 40)
@@ -295,7 +292,7 @@ def run_learning():
 
         # BACK SCREEN
         os.system('clear')
-        print(get_stats_header(conn, due_count))
+        print(get_stats_header(conn, due_passive, due_active))
         print("-" * 40)
         if is_active:
             print(f"\n{front}  —  {back}\n")
