@@ -288,7 +288,7 @@ def run_learning():
                 conn.commit()
                 answered_early = True
                 break
-            elif ch in ('\x1b[d', '\x1bod', '\x7f', '\x08'): # Left Arrow or Backspace
+            elif ch in ('\x1b[d', '\x1bod', '\x7f', '\x08', 'u', 'г'): # Left Arrow, Backspace, or U
                 logging.debug('Left Arrow pressed')
                 undone_id, undone_active = undo_last_action(conn, undo_stack)
                 if undone_id:
@@ -335,7 +335,7 @@ def run_learning():
                 c.execute(f"UPDATE words SET {col} = 1 WHERE id = ?", (word_id,))
                 conn.commit()
                 break
-            elif ch in ('\x1b[d', '\x1bod', '\x7f', '\x08'): # Left Arrow or Backspace
+            elif ch in ('\x1b[d', '\x1bod', '\x7f', '\x08', 'u', 'г'): # Left Arrow, Backspace, or U
                 logging.debug('Left Arrow pressed')
                 undone_id, undone_active = undo_last_action(conn, undo_stack)
                 if undone_id:
