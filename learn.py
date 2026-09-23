@@ -132,15 +132,17 @@ def run_learning():
             break
             
         word_id, db_word, hint, db_translation, is_active, freq = word_data
-        front = db_translation if is_active else db_word
-        back = db_word if is_active else db_translation
+        
+        # The hint is in Russian, so it should always be attached to the Russian translation!
+        russian_side = f"{db_translation} (hint: {hint})" if hint else db_translation
+        spanish_side = db_word
+        
+        front = russian_side if is_active else spanish_side
+        back = spanish_side if is_active else russian_side
         
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
-        if hint:
-            print(f"\n{front} (hint: {hint})\n")
-        else:
-            print(f"\n{front}\n")
+        print(f"\n{front}\n")
         print("-" * 40)
         print("[Space] - Show translation | [Left/Right] - Don't know/Know | [E] - Edit | [D] - Delete | [Q] - Quit")
         
@@ -180,8 +182,12 @@ def run_learning():
                     c.execute("UPDATE words SET translation = ? WHERE id = ?", (new_trans, word_id))
                     db_translation = new_trans
                 conn.commit()
-                front = db_translation if is_active else db_word
-                back = db_word if is_active else db_translation
+                
+                russian_side = f"{db_translation} (hint: {hint})" if hint else db_translation
+                spanish_side = db_word
+                front = russian_side if is_active else spanish_side
+                back = spanish_side if is_active else russian_side
+                
                 print("\nSaved! Press Space to show translation or continue.")
                 
             elif ch.isdigit():
@@ -199,10 +205,7 @@ def run_learning():
         os.system('clear')
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
-        if hint:
-            print(f"\n{front} (hint: {hint})  —  {back}\n")
-        else:
-            print(f"\n{front}  —  {back}\n")
+        print(f"\n{front}  —  {back}\n")
         print("-" * 40)
         
         print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [E] - Edit | [D] - Delete | [Q] - Quit")
@@ -227,8 +230,10 @@ def run_learning():
                     c.execute("UPDATE words SET translation = ? WHERE id = ?", (new_trans, word_id))
                     db_translation = new_trans
                     conn.commit()
-                    front = db_translation if is_active else db_word
-                    back = db_word if is_active else db_translation
+                    russian_side = f"{db_translation} (hint: {hint})" if hint else db_translation
+                    spanish_side = db_word
+                    front = russian_side if is_active else spanish_side
+                    back = spanish_side if is_active else russian_side
                     print(f"Saved: {db_translation}")
                 print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [D] - Delete | [Q] - Quit")
             elif ch == 'q' or ch == '\x03':
