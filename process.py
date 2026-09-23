@@ -8,7 +8,7 @@ try:
     from deep_translator import GoogleTranslator
 except ImportError:
     GoogleTranslator = None
-    print("Внимание: deep-translator не установлен. Переводы будут пустыми.")
+    print("Warning: deep-translator is not installed. Translations will be empty.")
 
 DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vocab.db")
 
@@ -32,9 +32,9 @@ def init_db():
     return conn
 
 def process_text(text):
-    # Оставляем только испанские слова (латиница + спецсимволы)
+    # Keep only Spanish words (latin + special characters)
     words = re.findall(r'[a-záéíóúñü]+', text.lower())
-    # Фильтруем короткие слова
+    # Filter short words
     unique_words = set(w for w in words if len(w) > 2)
     return unique_words
 
@@ -45,11 +45,11 @@ def add_words_to_db(words_set):
     
     translator = None
     if GoogleTranslator:
-        translator = GoogleTranslator(source='es', target='ru')
+        translator = GoogleTranslator(source='es', target='en') # Translating to English! The user requested everything in English
 
     added = 0
     total = len(words_set)
-    print(f"Обработка {total} уникальных слов...")
+    print(f"Processing {total} unique words...")
     
     for idx, w in enumerate(words_set):
         try:
@@ -69,17 +69,17 @@ def add_words_to_db(words_set):
                 
                 if added % 10 == 0:
                     conn.commit()
-                    print(f"Добавлено {added} слов...")
+                    print(f"Added {added} words...")
         except Exception as e:
-            print(f"Ошибка при добавлении слова {w}: {e}")
+            print(f"Error adding word {w}: {e}")
             
     conn.commit()
     conn.close()
-    print(f"Успешно. Добавлено {added} новых слов в базу данных.")
+    print(f"Success. Added {added} new words to the database.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Использование: python process.py <файл_с_текстом_или_->")
+        print("Usage: python process.py <text_file_or_->")
         sys.exit(1)
         
     text = ""

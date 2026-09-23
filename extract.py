@@ -7,26 +7,24 @@ def extract_text(filepath):
     ext = os.path.splitext(filepath)[1].lower()
     
     if ext in ['.mp4', '.mkv', '.avi']:
-        print(f"Пытаюсь извлечь субтитры из {filepath} (требуется ffmpeg)...")
+        print(f"Trying to extract subtitles from {filepath} (requires ffmpeg)...")
         try:
-            # Ищем испанские субтитры
+            # Look for Spanish subtitles
             probe_result = subprocess.run(
                 ["ffprobe", "-v", "error", "-select_streams", "s", "-show_entries", "stream=index:stream_tags=language", "-of", "csv=p=0", filepath],
                 capture_output=True, text=True
             )
             
-            stream_index = "0:s:0" # По умолчанию первый
+            stream_index = "0:s:0" # Default to first
             if probe_result.returncode == 0:
                 lines = probe_result.stdout.strip().split('\n')
-                # Формат вывода ffprobe: 3,rus \n 4,eng \n 8,spa
-                # Нам нужен порядковый номер потока среди субтитров
                 sub_count = 0
                 for line in lines:
                     if not line: continue
                     parts = line.split(',')
                     if len(parts) >= 2 and ('spa' in parts[1].lower() or 'es' in parts[1].lower()):
                         stream_index = f"0:s:{sub_count}"
-                        print(f"Найдены испанские субтитры (поток {stream_index})", file=sys.stderr)
+                        print(f"Found Spanish subtitles (stream {stream_index})", file=sys.stderr)
                         break
                     sub_count += 1
             
@@ -36,18 +34,18 @@ def extract_text(filepath):
             )
             if result.returncode == 0:
                 text = result.stdout
-                # Очищаем srt от таймкодов и HTML тегов
+                # Clean up srt timecodes and HTML tags
                 text = re.sub(r'\d+\n\d{2}:\d{2}:\d{2},\d{3} --> \d{2}:\d{2}:\d{2},\d{3}\n', '', text)
                 text = re.sub(r'<[^>]+>', '', text)
                 return text
             else:
-                print(f"Ошибка ffmpeg или в видео нет встроенных субтитров. Вывод: {result.stderr}")
+                print(f"ffmpeg error or no embedded subtitles. Output: {result.stderr}")
                 return ""
         except FileNotFoundError:
-            print("ffmpeg не установлен. Установите его: brew install ffmpeg")
+            print("ffmpeg is not installed. Install it via: brew install ffmpeg")
             return ""
         except Exception as e:
-            print(f"Неизвестная ошибка: {e}")
+            print(f"Unknown error: {e}")
             return ""
             
     elif ext == '.pdf':
@@ -62,7 +60,7 @@ def extract_text(filepath):
                         text += extracted + "\n"
                 return text
         except ImportError:
-            print("PyPDF2 не установлен. Запустите в окружении с нужными зависимостями.")
+            print("PyPDF2 is not installed. Run in an environment with the correct dependencies.")
             return ""
             
     elif ext in ['.txt', '.srt']:
@@ -70,12 +68,12 @@ def extract_text(filepath):
             return f.read()
             
     else:
-        print(f"Формат файла {ext} не поддерживается для извлечения текста.")
+        print(f"File format {ext} is not supported for text extraction.")
         return ""
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Использование: python extract.py <путь_к_файлу>")
+        print("Usage: python extract.py <filepath>")
         sys.exit(1)
         
     text = extract_text(sys.argv[1])

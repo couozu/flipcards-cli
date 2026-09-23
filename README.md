@@ -1,46 +1,44 @@
-# Spanish Learning Prototype
+# Flipcards CLI (Spanish Learning)
 
-Это прототип программы для изучения испанских слов на основе системы интервальных повторений (Spaced Repetition).
+A command-line prototype for learning Spanish words using a Spaced Repetition System (SRS).
 
-## Требования
+## Requirements
 
 - Python 3
-- `ffmpeg` (для извлечения субтитров из видео). Установить на Mac: `brew install ffmpeg`
+- `ffmpeg` (for extracting subtitles from video files). Install on macOS: `brew install ffmpeg`
 
-## Как использовать
+## How to use
 
-1. **Активируйте виртуальное окружение**
-   Вся программа находится в `/Users/couozu/.gemini/antigravity/scratch/spanish_learning`.
-   Перейдите туда и активируйте окружение (там уже установлены нужные библиотеки):
+1. **Activate the virtual environment**
+   First, navigate to the project directory and activate the virtual environment (dependencies are already installed):
    ```bash
-   cd /Users/couozu/.gemini/antigravity/scratch/spanish_learning
    source venv/bin/activate
    ```
 
-2. **Извлечение текста (Шаг 1)**
-   Скрипт `extract.py` извлекает текст из `.srt`, `.txt`, `.pdf` и видео-файлов (если внутри них зашиты субтитры).
+2. **Extract text (Step 1)**
+   The `extract.py` script extracts text from `.srt`, `.txt`, `.pdf`, and video files (if they have embedded subtitles).
    ```bash
-   python extract.py /путь/к/видео.mkv > text.txt
+   python extract.py /path/to/video.mkv > text.txt
    ```
 
-3. **Обработка текста и добавление в БД (Шаг 2)**
-   Скрипт `process.py` берет текст, выделяет уникальные испанские слова, переводит их (через Google Translate) и добавляет в локальную SQLite базу данных `vocab.db`.
+3. **Process text and add to DB (Step 2)**
+   The `process.py` script takes the text, extracts unique Spanish words, translates them to Russian (via Google Translate), and adds them to the local SQLite database `vocab.db`.
    ```bash
    python process.py text.txt
    ```
-   *Лайфхак:* можно объединить шаги 1 и 2 без создания временного файла:
+   *Pro tip:* You can combine steps 1 and 2 without creating a temporary file:
    ```bash
-   python extract.py /путь/к/видео.mkv | python process.py -
+   python extract.py /path/to/video.mkv | python process.py -
    ```
 
-4. **Изучение слов (Шаг 3)**
-   Скрипт `learn.py` запускает консольный интерфейс для повторения слов.
+4. **Learn words (Step 3)**
+   The `learn.py` script runs the terminal UI for practicing words.
    ```bash
    python learn.py
    ```
-   **Управление:**
-   - `Пробел` - показать перевод слова
-   - `S` - статистика (сколько слов в базе, сколько нужно повторить сегодня)
-   - `A` - **не знаю** (сбросить прогресс, слово будет показано снова завтра)
-   - `L` - **знаю** (слово будет отложено на более долгий срок согласно алгоритму)
-   - `Q` - выход
+   **Controls:**
+   - `Space` - Show translation
+   - `Any digit (0-9)` - Show statistics (total words in DB, words left for today)
+   - `Any key on the LEFT half of the keyboard` - **Don't know** (resets progress, word will be shown again tomorrow)
+   - `Any key on the RIGHT half of the keyboard` - **Know** (word is delayed based on the SRS algorithm)
+   - `Q` - Quit

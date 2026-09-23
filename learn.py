@@ -55,18 +55,18 @@ def run_learning():
         os.system('clear')
         now_iso = datetime.now().isoformat()
         
-        # Получаем количество слов на сегодня
+        # Get count of words due today
         c.execute("SELECT COUNT(*) FROM words WHERE next_review <= ?", (now_iso,))
         due_count = c.fetchone()[0]
         
-        # Общее количество слов
+        # Total words
         c.execute("SELECT COUNT(*) FROM words")
         total_count = c.fetchone()[0]
         
         if due_count == 0:
-            print("Отлично! На сегодня больше нет слов для повторения.")
-            print(f"Всего слов в базе: {total_count}")
-            print("Нажмите любую клавишу для выхода...")
+            print("Great! No more words to review for today.")
+            print(f"Total words in database: {total_count}")
+            print("Press any key to exit...")
             get_char()
             break
             
@@ -78,27 +78,27 @@ def run_learning():
             
         word_id, word, translation = word_data
         
-        print(f"Осталось на сегодня: {due_count} | Всего слов: {total_count}")
+        print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
-        print(f"\nСлово: {word.upper()}\n")
+        print(f"\nWord: {word.upper()}\n")
         print("-" * 40)
-        print("[Пробел] - показать перевод | [Любая цифра] - статистика | [Q] - выход")
+        print("[Space] - Show translation | [Any Digit] - Statistics | [Q] - Quit")
         
         while True:
             ch = get_char().lower()
             if ch == ' ':
                 break
             elif ch.isdigit():
-                print(f"\n--- СТАТИСТИКА ---")
-                print(f"Всего слов: {total_count}")
-                print(f"Осталось повторить сегодня: {due_count}")
-                print("Нажмите пробел чтобы продолжить...")
-            elif ch == 'q' or ch == '\x03': # q или Ctrl+C
+                print(f"\n--- STATISTICS ---")
+                print(f"Total words: {total_count}")
+                print(f"Left to review today: {due_count}")
+                print("Press Space to continue...")
+            elif ch == 'q' or ch == '\x03': # q or Ctrl+C
                 conn.close()
                 return
 
-        print(f"\nПеревод: {translation}\n")
-        print("[Левая половина клавиатуры] - не знаю | [Правая половина] - знаю | [Q] - выход")
+        print(f"\nTranslation: {translation}\n")
+        print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [Q] - Quit")
         
         LEFT_KEYS = set("qwertasdfgzxcvbйцукенфывапячсми")
         RIGHT_KEYS = set("yuiophjklnmнгшщзхъролджэтьбю")
@@ -117,7 +117,7 @@ def run_learning():
 
 if __name__ == "__main__":
     if not os.path.exists(DB_FILE):
-        print("База данных не найдена. Сначала добавьте слова с помощью process.py")
+        print("Database not found. Add words using process.py first.")
         sys.exit(1)
     try:
         run_learning()
