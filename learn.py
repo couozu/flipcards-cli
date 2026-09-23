@@ -157,7 +157,7 @@ def update_word(conn, word_id, known, is_active=False):
         
         if known:
             if reps == 0:
-                interval = 1
+                interval = 0.5 # 12 hours
             elif reps == 1:
                 interval = 6
             else:
@@ -181,7 +181,7 @@ def update_word(conn, word_id, known, is_active=False):
         
         if known:
             if reps == 0:
-                interval = 1
+                interval = 0.5 # 12 hours
             elif reps == 1:
                 interval = 6
             else:
