@@ -81,9 +81,9 @@ def run_learning():
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
         if hint:
-            print(f"\n{word.upper()} (hint: {hint})\n")
+            print(f"\n{word} (hint: {hint})\n")
         else:
-            print(f"\n{word.upper()}\n")
+            print(f"\n{word}\n")
         print("-" * 40)
         print("[Space] - Show translation | [E] - Edit | [Any Digit] - Statistics | [Q] - Quit")
         
@@ -121,9 +121,9 @@ def run_learning():
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
         if hint:
-            print(f"\n{word.upper()} (hint: {hint})  —  {translation}\n")
+            print(f"\n{word} (hint: {hint})  —  {translation}\n")
         else:
-            print(f"\n{word.upper()}  —  {translation}\n")
+            print(f"\n{word}  —  {translation}\n")
         print("-" * 40)
         
         print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [E] - Edit | [Q] - Quit")
