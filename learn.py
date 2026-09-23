@@ -231,10 +231,13 @@ def run_learning():
             
         if force_next_word:
             # find it in all_due
-            match = next((r for r in all_due if r[0] == force_next_word[0] and bool(r[4]) == force_next_word[1]), None)
+            match = next((r for r in all_due if int(r[0]) == int(force_next_word[0]) and bool(r[4]) == bool(force_next_word[1])), None)
             if match:
                 selected_row = match
             else:
+                print(f"
+DEBUG: Could not find restored word {force_next_word} in all_due! all_due length: {len(all_due)}")
+                time.sleep(3)
                 # Fallback if not found (shouldn't happen)
                 weights = [row[5] + 1 for row in all_due]
                 selected_row = random.choices(all_due, weights=weights, k=1)[0]
