@@ -21,12 +21,9 @@ def get_char():
         tty.setraw(sys.stdin.fileno())
         ch = sys.stdin.read(1)
         if ch == '\x1b':
-            # Give it a slightly longer timeout to catch full sequence
-            if select.select([sys.stdin], [], [], 0.1)[0]:
+            # Read all remaining characters in the escape sequence
+            while select.select([sys.stdin], [], [], 0.05)[0]:
                 ch += sys.stdin.read(1)
-                if ch.endswith('[') or ch.endswith('O'):
-                    if select.select([sys.stdin], [], [], 0.1)[0]:
-                        ch += sys.stdin.read(1)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
@@ -298,7 +295,7 @@ def run_learning():
                 conn.commit()
                 answered_early = True
                 break
-            elif ch in ('\x1b[d', '\x1bod', '\x7f', '\x08', 'u', 'г'): # Left Arrow, Backspace, or U
+            elif ch in ('\x7f', '\x08', 'u', 'г') or (ch.startswith('\x1b') and ch.endswith('d')): # Left Arrow, Backspace, or U
                 logging.debug('Left Arrow pressed')
                 undone_id, undone_active = undo_last_action(conn, undo_stack)
                 if undone_id:
@@ -308,6 +305,10 @@ def run_learning():
                     answered_early = True
                     break
             elif ch in ('q', 'й', '\x03'):
+                pass
+            else:
+                logging.debug(f"Unhandled key pressed on BACK: {repr(ch)}")
+            if ch in ('q', 'й', '\x03'):
                 conn.close()
                 return
 
@@ -345,7 +346,7 @@ def run_learning():
                 c.execute(f"UPDATE words SET {col} = 1 WHERE id = ?", (word_id,))
                 conn.commit()
                 break
-            elif ch in ('\x1b[d', '\x1bod', '\x7f', '\x08', 'u', 'г'): # Left Arrow, Backspace, or U
+            elif ch in ('\x7f', '\x08', 'u', 'г') or (ch.startswith('\x1b') and ch.endswith('d')): # Left Arrow, Backspace, or U
                 logging.debug('Left Arrow pressed')
                 undone_id, undone_active = undo_last_action(conn, undo_stack)
                 if undone_id:
@@ -354,6 +355,10 @@ def run_learning():
                     time.sleep(0.5)
                     break
             elif ch in ('e', 'у'):
+                pass
+            else:
+                logging.debug(f"Unhandled key pressed on FRONT: {repr(ch)}")
+            if ch in ('e', 'у'):
                 termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, termios.tcgetattr(sys.stdin.fileno()))
                 print(f"\nCurrent translation: {db_translation}")
                 new_trans = input(f"New translation (leave blank to keep '{db_translation}'): ").strip()
@@ -370,6 +375,10 @@ def run_learning():
                 print("[Space] - Don't know | [K] - Know | [D] - Delete | [<-] Undo")
                 # Return terminal to raw mode (handled by next get_char)
             elif ch in ('q', 'й', '\x03'):
+                pass
+            else:
+                logging.debug(f"Unhandled key pressed on BACK: {repr(ch)}")
+            if ch in ('q', 'й', '\x03'):
                 conn.close()
                 return
 
