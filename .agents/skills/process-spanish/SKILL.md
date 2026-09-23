@@ -16,9 +16,14 @@ This skill instructs you on how to extract vocabulary from a Spanish text file, 
 2. **Read the Source Text**
    Use your file reading tools to read the provided text or subtitle file. 
 
-3. **Extract and Translate Contextually**
-   Analyze the text. Extract all unique Spanish words. Translate each word into the user's preferred target language **based on the context** of the sentence it appears in. 
-   - *Handling Clashes/Homonyms*: If the exact same Spanish word appears in multiple different contexts with completely different meanings (e.g., "banco" as a financial bank vs "banco" as a park bench), create separate entries for each meaning and provide a short `hint` in English or the target language to distinguish them (e.g. `hint: financial institution`). If there is only one meaning, leave the hint empty (`""`).
+3. **Extract and Translate Contextually (with Lemmatization)**
+   Analyze the text. Extract all unique Spanish words. **CRITICAL: You must lemmatize the words before adding them:**
+   - Verbs must be converted to their **infinitive** form (e.g. `comen` -> `comer`, `verás` -> `ver`).
+   - Adjectives must be converted to **masculine, singular** form (e.g. `chiquitas` -> `chiquito`).
+   - Nouns must be converted to **singular** form (e.g. `tonterías` -> `tontería`).
+   
+   Translate each lemmatized word into the user's preferred target language **based on the context** of the sentence it appeared in. 
+   - *Handling Clashes/Homonyms*: If the exact same lemmatized Spanish word appears in multiple different contexts with completely different meanings (e.g., "banco" as a financial bank vs "banco" as a park bench), create separate entries for each meaning and provide a short `hint` in English or the target language to distinguish them (e.g. `hint: финансовое учреждение`). If there is only one meaning, leave the hint empty (`""`).
 
 4. **Prepare JSON Data**
    Format your extracted vocabulary into a JSON array of objects. Each object must have:
