@@ -86,13 +86,13 @@ def get_stats_header(conn, due_passive, due_active):
     today_time = today_row[0] if today_row else 0
     today_cards = today_row[1] if today_row else 0
     
-    c.execute("SELECT COUNT(*) FROM words WHERE passive_ignored = 0")
+    c.execute("SELECT COUNT(*) FROM words")
     total_active_vocab = c.fetchone()[0]
     
     c.execute("SELECT COUNT(*) FROM words WHERE passive_ignored = 1 OR repetitions >= 3")
     passive_mastered = c.fetchone()[0]
     
-    c.execute("SELECT COUNT(*) FROM words WHERE is_active_unlocked = 1 AND (active_ignored = 1 OR active_repetitions >= 3)")
+    c.execute("SELECT COUNT(*) FROM words WHERE active_ignored = 1 OR (is_active_unlocked = 1 AND active_repetitions >= 3)")
     active_mastered = c.fetchone()[0]
     
     return f"Due: {due_passive}p/{due_active}a | Mast: {passive_mastered}p/{active_mastered}a | Today: {today_cards}({format_time(today_time)}) | Tot: {total_cards}({format_time(total_time)}) | DB: {total_active_vocab}" 
@@ -209,7 +209,7 @@ def run_learning():
         due_count = due_passive + due_active
         
         # Total words
-        c.execute("SELECT COUNT(*) FROM words WHERE passive_ignored = 0")
+        c.execute("SELECT COUNT(*) FROM words")
         total_count = c.fetchone()[0]
         
         if due_count == 0:
