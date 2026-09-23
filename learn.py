@@ -202,7 +202,7 @@ def run_learning():
         now_iso = datetime.now().isoformat()
         
         # Get count of words due today
-c.execute("SELECT count(*) FROM words WHERE next_review <= ? AND passive_ignored = 0", (now_iso,))
+        c.execute("SELECT count(*) FROM words WHERE next_review <= ? AND passive_ignored = 0", (now_iso,))
         due_passive = c.fetchone()[0]
         c.execute("SELECT count(*) FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ? AND active_ignored = 0", (now_iso,))
         due_active = c.fetchone()[0]
