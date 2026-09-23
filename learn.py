@@ -10,6 +10,10 @@ import time
 
 DB_FILE = "/Users/couozu/.gemini/antigravity/scratch/spanish_learning/vocab.db"
 
+import logging
+logging.basicConfig(filename='app.log', level=logging.DEBUG, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
 def get_char():
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
@@ -112,6 +116,7 @@ def undo_last_action(conn, undo_stack):
     values = list(last_state.values())
     values.append(word_id)
     
+    logging.debug(f"Restoring row {word_id} with values: {dict(zip(cols, values))}")
     c.execute(f"UPDATE words SET {placeholders} WHERE id = ?", values)
     
     # Remove the latest history entry for this word
@@ -122,6 +127,7 @@ def undo_last_action(conn, undo_stack):
     c.execute("UPDATE daily_stats SET cards_reviewed = max(0, cards_reviewed - 1) WHERE date = ?", (today_str,))
     
     conn.commit()
+    logging.debug(f"Undo successful for word_id={word_id}, is_active={is_active}")
     return word_id, is_active
 
 def save_state_for_undo(conn, word_id, is_active, undo_stack):
@@ -132,6 +138,7 @@ def save_state_for_undo(conn, word_id, is_active, undo_stack):
     row_dict = dict(zip(col_names, row))
     row_dict['__is_active'] = is_active
     undo_stack.append(row_dict)
+    logging.debug(f"Saved state for undo: word_id={word_id}, is_active={is_active}, next_review={row_dict['next_review']}")
 
 def update_word(conn, word_id, known, is_active=False):
     c = conn.cursor()
@@ -226,16 +233,20 @@ def run_learning():
         ''', (now_iso, now_iso))
         
         all_due = c.fetchall()
+        logging.debug(f"Fetched all_due, count={len(all_due)}")
         if not all_due:
             break
             
         if force_next_word:
+            logging.debug(f"Attempting to force next word: {force_next_word}")
             # find it in all_due
             match = next((r for r in all_due if int(r[0]) == int(force_next_word[0]) and bool(r[4]) == bool(force_next_word[1])), None)
             if match:
                 selected_row = match
+                logging.debug(f"Successfully matched forced word: {match}")
             else:
-                print(f"\nDEBUG: Could not find restored word {force_next_word} in all_due! all_due length: {len(all_due)}")
+                logging.error(f"Could not find restored word {force_next_word} in all_due! all_due length: {len(all_due)}")
+                print(f"\nDEBUG: Could not find restored word {force_next_word} in all_due! Check app.log")
                 time.sleep(3)
                 # Fallback if not found (shouldn't happen)
                 weights = [row[5] + 1 for row in all_due]
@@ -277,14 +288,15 @@ def run_learning():
                 conn.commit()
                 answered_early = True
                 break
-            elif ch == '\x1b[d': # Left Arrow
+            elif ch in ('\x1b[d', '\x1bod', '\x7f', '\x08'): # Left Arrow or Backspace
+                logging.debug('Left Arrow pressed')
                 undone_id, undone_active = undo_last_action(conn, undo_stack)
                 if undone_id:
                     force_next_word = (undone_id, undone_active)
                     print("\nUndo successful! Reloading...")
                     time.sleep(0.5)
-                answered_early = True
-                break
+                    answered_early = True
+                    break
             elif ch == 'q' or ch == '\x03':
                 conn.close()
                 return
@@ -323,13 +335,14 @@ def run_learning():
                 c.execute(f"UPDATE words SET {col} = 1 WHERE id = ?", (word_id,))
                 conn.commit()
                 break
-            elif ch == '\x1b[d': # Left Arrow
+            elif ch in ('\x1b[d', '\x1bod', '\x7f', '\x08'): # Left Arrow or Backspace
+                logging.debug('Left Arrow pressed')
                 undone_id, undone_active = undo_last_action(conn, undo_stack)
                 if undone_id:
                     force_next_word = (undone_id, undone_active)
                     print("\nUndo successful! Reloading...")
                     time.sleep(0.5)
-                break
+                    break
             elif ch == 'e':
                 termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, termios.tcgetattr(sys.stdin.fileno()))
                 print(f"\nCurrent translation: {db_translation}")

@@ -4,3 +4,5 @@ __pycache__/
 *.db-journal
 .DS_Store
 text.txt
+
+app.log
