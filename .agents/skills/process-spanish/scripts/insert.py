@@ -16,6 +16,7 @@ def init_db(c):
                   interval REAL,
                   repetitions INTEGER,
                   ease_factor REAL,
+                  frequency INTEGER DEFAULT 0,
                   UNIQUE(word, hint))''')
     c.execute('''CREATE TABLE IF NOT EXISTS history
                  (id INTEGER PRIMARY KEY,

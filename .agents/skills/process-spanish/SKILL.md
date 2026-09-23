@@ -38,6 +38,11 @@ This skill instructs you on how to extract vocabulary from a Spanish text file, 
    ```
    *Note: The helper script automatically handles duplicates and diffs against the existing database, so you don't need to worry about over-writing progress.*
 
+   After insertion, you must calculate and save the frequencies of the words so that the flashcards can prioritize the most common words:
+   ```bash
+   python .agents/skills/process-spanish/scripts/update_freqs.py /path/to/source.txt /tmp/vocab.json
+   ```
+
 6. **Validation (Completeness Check)**
    After inserting the words, you must verify that no words were accidentally skipped (as LLMs sometimes drop words when processing large texts).
    - Write a quick python script to extract all raw unique Spanish words from the source text using a simple regex (e.g. `re.findall(r'[a-záéíóúñü]+', text.lower())`).

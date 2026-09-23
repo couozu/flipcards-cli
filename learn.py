@@ -28,7 +28,9 @@ def check_and_migrate_db(conn):
         c.execute("ALTER TABLE words ADD COLUMN active_interval REAL DEFAULT 0")
         c.execute("ALTER TABLE words ADD COLUMN active_repetitions INTEGER DEFAULT 0")
         c.execute("ALTER TABLE words ADD COLUMN active_ease_factor REAL DEFAULT 2.5")
-        conn.commit()
+    if "frequency" not in columns:
+        c.execute("ALTER TABLE words ADD COLUMN frequency INTEGER DEFAULT 0")
+    conn.commit()
 
 def update_word(conn, word_id, known, is_active=False):
     c = conn.cursor()
@@ -117,17 +119,17 @@ def run_learning():
             
         c.execute('''
             SELECT * FROM (
-                SELECT id, word, hint, translation, 0 as is_active FROM words WHERE next_review <= ?
+                SELECT id, word, hint, translation, 0 as is_active, frequency FROM words WHERE next_review <= ?
                 UNION ALL
-                SELECT id, word, hint, translation, 1 as is_active FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ?
-            ) ORDER BY RANDOM() LIMIT 1
+                SELECT id, word, hint, translation, 1 as is_active, frequency FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ?
+            ) ORDER BY frequency DESC, RANDOM() LIMIT 1
         ''', (now_iso, now_iso))
         word_data = c.fetchone()
         
         if not word_data:
             break
             
-        word_id, db_word, hint, db_translation, is_active = word_data
+        word_id, db_word, hint, db_translation, is_active, freq = word_data
         front = db_translation if is_active else db_word
         back = db_word if is_active else db_translation
         mode_str = "[ACTIVE (Translate to Spanish)] " if is_active else "[PASSIVE (Translate to Russian)] "
