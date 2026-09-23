@@ -281,7 +281,7 @@ def run_learning():
             ch = get_char().lower()
             if ch == ' ':
                 break
-            elif ch == 'd':
+            elif ch in ('d', 'в'):
                 save_state_for_undo(conn, word_id, is_active, undo_stack)
                 col = "active_ignored" if is_active else "passive_ignored"
                 c.execute(f"UPDATE words SET {col} = 1 WHERE id = ?", (word_id,))
@@ -297,7 +297,7 @@ def run_learning():
                     time.sleep(0.5)
                     answered_early = True
                     break
-            elif ch == 'q' or ch == '\x03':
+            elif ch in ('q', 'й', '\x03'):
                 conn.close()
                 return
 
@@ -324,12 +324,12 @@ def run_learning():
                 update_word(conn, word_id, known=False, is_active=bool(is_active))
                 record_time_spent(conn, int(time.time() - card_start_time))
                 break
-            elif ch == 'k': # K = Know
+            elif ch in ('k', 'л'): # K = Know
                 save_state_for_undo(conn, word_id, is_active, undo_stack)
                 update_word(conn, word_id, known=True, is_active=bool(is_active))
                 record_time_spent(conn, int(time.time() - card_start_time))
                 break
-            elif ch == 'd':
+            elif ch in ('d', 'в'):
                 save_state_for_undo(conn, word_id, is_active, undo_stack)
                 col = "active_ignored" if is_active else "passive_ignored"
                 c.execute(f"UPDATE words SET {col} = 1 WHERE id = ?", (word_id,))
@@ -343,7 +343,7 @@ def run_learning():
                     print("\nUndo successful! Reloading...")
                     time.sleep(0.5)
                     break
-            elif ch == 'e':
+            elif ch in ('e', 'у'):
                 termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, termios.tcgetattr(sys.stdin.fileno()))
                 print(f"\nCurrent translation: {db_translation}")
                 new_trans = input(f"New translation (leave blank to keep '{db_translation}'): ").strip()
@@ -359,7 +359,7 @@ def run_learning():
                     print(f"Saved: {db_translation}")
                 print("[Space] - Don't know | [K] - Know | [D] - Delete | [<-] Undo")
                 # Return terminal to raw mode (handled by next get_char)
-            elif ch == 'q' or ch == '\x03':
+            elif ch in ('q', 'й', '\x03'):
                 conn.close()
                 return
 
