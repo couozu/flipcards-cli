@@ -136,11 +136,24 @@ def run_learning():
         
         word_id, db_word, hint, db_translation, is_active, freq = selected_row
         
+        def strip_article(word):
+            lower = word.lower()
+            if lower.startswith("el "): return word[3:]
+            if lower.startswith("la "): return word[3:]
+            if lower.startswith("los "): return word[4:]
+            if lower.startswith("las "): return word[4:]
+            if lower.startswith("un "): return word[3:]
+            if lower.startswith("una "): return word[4:]
+            return word
+
         # The hint is in Russian, so it should always be attached to the Russian translation!
         russian_side = f"{db_translation} (hint: {hint})" if hint else db_translation
         spanish_side = db_word
         
-        front = russian_side if is_active else spanish_side
+        # Strip article on the front of passive cards
+        passive_front = strip_article(spanish_side)
+        
+        front = russian_side if is_active else passive_front
         back = spanish_side if is_active else russian_side
         
         print(f"Left for today: {due_count} | Total words: {total_count}")

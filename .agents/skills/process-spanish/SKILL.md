@@ -20,7 +20,7 @@ This skill instructs you on how to extract vocabulary from a Spanish text file, 
    Analyze the text. Extract all unique Spanish words. **CRITICAL: You must lemmatize the words before adding them:**
    - Verbs must be converted to their **infinitive** form (e.g. `comen` -> `comer`, `verás` -> `ver`).
    - Adjectives must be converted to **masculine, singular** form (e.g. `chiquitas` -> `chiquito`).
-   - Nouns must be converted to **singular** form (e.g. `tonterías` -> `tontería`).
+   - Nouns must be converted to **singular** form AND MUST include their definite article (el/la) to indicate gender (e.g. `las tonterías` -> `la tontería`, `problema` -> `el problema`).
    
    Translate each lemmatized word into the user's preferred target language **based on the context** of the sentence it appeared in. 
    - *Handling Clashes/Homonyms*: If the exact same lemmatized Spanish word appears in multiple different contexts with completely different meanings (e.g., "banco" as a financial bank vs "banco" as a park bench), create separate entries for each meaning and provide a short `hint` in English or the target language to distinguish them (e.g. `hint: финансовое учреждение`). If there is only one meaning, leave the hint empty (`""`).
