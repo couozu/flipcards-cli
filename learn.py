@@ -33,6 +33,8 @@ def check_and_migrate_db(conn):
         c.execute("ALTER TABLE words ADD COLUMN frequency INTEGER DEFAULT 0")
     if "is_ignored" not in columns:
         c.execute("ALTER TABLE words ADD COLUMN is_ignored INTEGER DEFAULT 0")
+    if "article" not in columns:
+        c.execute("ALTER TABLE words ADD COLUMN article TEXT DEFAULT ''")
     conn.commit()
 
 def update_word(conn, word_id, known, is_active=False):
@@ -121,9 +123,9 @@ def run_learning():
             break
             
         c.execute('''
-            SELECT id, word, hint, translation, 0 as is_active, frequency FROM words WHERE next_review <= ? AND is_ignored = 0
+            SELECT id, word, hint, translation, 0 as is_active, frequency, article FROM words WHERE next_review <= ? AND is_ignored = 0
             UNION ALL
-            SELECT id, word, hint, translation, 1 as is_active, frequency FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ? AND is_ignored = 0
+            SELECT id, word, hint, translation, 1 as is_active, frequency, article FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ? AND is_ignored = 0
         ''', (now_iso, now_iso))
         
         all_due = c.fetchall()
@@ -134,14 +136,15 @@ def run_learning():
         weights = [row[5] + 1 for row in all_due]
         selected_row = random.choices(all_due, weights=weights, k=1)[0]
         
-        word_id, db_word, hint, db_translation, is_active, freq = selected_row
+        word_id, db_word, hint, db_translation, is_active, freq, article = selected_row
         
         # The hint is in Russian, so it should always be attached to the Russian translation!
         russian_side = f"{db_translation} (hint: {hint})" if hint else db_translation
-        spanish_side = db_word
+        # For the Spanish side shown on the back, include article if it's a noun
+        spanish_with_article = f"{article} {db_word}" if article else db_word
         
-        front = russian_side if is_active else spanish_side
-        back = spanish_side if is_active else russian_side
+        front = russian_side if is_active else db_word
+        back = spanish_with_article if is_active else russian_side
         
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
@@ -208,7 +211,13 @@ def run_learning():
         os.system('clear')
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
-        print(f"\n{front}  —  {back}\n")
+        if is_active:
+            # Active: front is Russian, back is Spanish with article
+            print(f"\n{front}  —  {back}\n")
+        else:
+            # Passive: front is Spanish word, back is Russian translation + article tag
+            article_tag = f" ({article})" if article else ""
+            print(f"\n{front}  —  {back}{article_tag}\n")
         print("-" * 40)
         
         print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [E] - Edit | [D] - Delete | [Q] - Quit")
