@@ -82,13 +82,13 @@ def run_learning():
         print("-" * 40)
         print(f"\nСлово: {word.upper()}\n")
         print("-" * 40)
-        print("[Пробел] - показать перевод | [S] - статистика | [Q] - выход")
+        print("[Пробел] - показать перевод | [Любая цифра] - статистика | [Q] - выход")
         
         while True:
             ch = get_char().lower()
             if ch == ' ':
                 break
-            elif ch == 's':
+            elif ch.isdigit():
                 print(f"\n--- СТАТИСТИКА ---")
                 print(f"Всего слов: {total_count}")
                 print(f"Осталось повторить сегодня: {due_count}")
@@ -98,14 +98,17 @@ def run_learning():
                 return
 
         print(f"\nПеревод: {translation}\n")
-        print("[A] - не знаю (повторить) | [L] - знаю (отложить) | [Q] - выход")
+        print("[Левая половина клавиатуры] - не знаю | [Правая половина] - знаю | [Q] - выход")
         
+        LEFT_KEYS = set("qwertasdfgzxcvbйцукенфывапячсми")
+        RIGHT_KEYS = set("yuiophjklnmнгшщзхъролджэтьбю")
+
         while True:
             ch = get_char().lower()
-            if ch == 'a':
+            if ch in LEFT_KEYS:
                 update_word(conn, word_id, known=False)
                 break
-            elif ch == 'l':
+            elif ch in RIGHT_KEYS:
                 update_word(conn, word_id, known=True)
                 break
             elif ch == 'q' or ch == '\x03':
