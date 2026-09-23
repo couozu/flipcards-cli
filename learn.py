@@ -235,8 +235,7 @@ def run_learning():
             if match:
                 selected_row = match
             else:
-                print(f"
-DEBUG: Could not find restored word {force_next_word} in all_due! all_due length: {len(all_due)}")
+                print(f"\nDEBUG: Could not find restored word {force_next_word} in all_due! all_due length: {len(all_due)}")
                 time.sleep(3)
                 # Fallback if not found (shouldn't happen)
                 weights = [row[5] + 1 for row in all_due]
