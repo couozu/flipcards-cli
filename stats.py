@@ -10,8 +10,8 @@ def show_stats():
         print("No stats yet!")
         return
         
-    print("\\n=== VOCABULARY GROWTH (MASTERED WORDS) ===")
-    print("Legend: ▓ = Passive, █ = Active\\n")
+    print("\n=== VOCABULARY GROWTH (MASTERED WORDS) ===")
+    print("Legend: ▓ = Passive, █ = Active\n")
     
     max_mast = max(r[1] + r[2] for r in rows) if rows else 0
     max_width = 40
