@@ -7,7 +7,7 @@ def extract_text(filepath):
     ext = os.path.splitext(filepath)[1].lower()
     
     if ext in ['.mp4', '.mkv', '.avi']:
-        print(f"Trying to extract subtitles from {filepath} (requires ffmpeg)...")
+        print(f"Trying to extract subtitles from {filepath} (requires ffmpeg)...", file=sys.stderr)
         try:
             # Look for Spanish subtitles
             probe_result = subprocess.run(
@@ -39,13 +39,13 @@ def extract_text(filepath):
                 text = re.sub(r'<[^>]+>', '', text)
                 return text
             else:
-                print(f"ffmpeg error or no embedded subtitles. Output: {result.stderr}")
+                print(f"ffmpeg error or no embedded subtitles. Output: {result.stderr}", file=sys.stderr)
                 return ""
         except FileNotFoundError:
-            print("ffmpeg is not installed. Install it via: brew install ffmpeg")
+            print("ffmpeg is not installed. Install it via: brew install ffmpeg", file=sys.stderr)
             return ""
         except Exception as e:
-            print(f"Unknown error: {e}")
+            print(f"Unknown error: {e}", file=sys.stderr)
             return ""
             
     elif ext == '.pdf':
@@ -60,7 +60,7 @@ def extract_text(filepath):
                         text += extracted + "\n"
                 return text
         except ImportError:
-            print("PyPDF2 is not installed. Run in an environment with the correct dependencies.")
+            print("PyPDF2 is not installed. Run in an environment with the correct dependencies.", file=sys.stderr)
             return ""
             
     elif ext in ['.txt', '.srt']:
@@ -68,12 +68,12 @@ def extract_text(filepath):
             return f.read()
             
     else:
-        print(f"File format {ext} is not supported for text extraction.")
+        print(f"File format {ext} is not supported for text extraction.", file=sys.stderr)
         return ""
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python extract.py <filepath>")
+        print("Usage: python extract.py <filepath>", file=sys.stderr)
         sys.exit(1)
         
     text = extract_text(sys.argv[1])
