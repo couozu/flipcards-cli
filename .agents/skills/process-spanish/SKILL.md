@@ -38,5 +38,11 @@ This skill instructs you on how to extract vocabulary from a Spanish text file, 
    ```
    *Note: The helper script automatically handles duplicates and diffs against the existing database, so you don't need to worry about over-writing progress.*
 
-6. **Report**
+6. **Validation (Completeness Check)**
+   After inserting the words, you must verify that no words were accidentally skipped (as LLMs sometimes drop words when processing large texts).
+   - Write a quick python script to extract all raw unique Spanish words from the source text using a simple regex (e.g. `re.findall(r'[a-záéíóúñü]+', text.lower())`).
+   - Query `vocab.db` to get all words currently in the database.
+   - For any raw words from the text that do not seem to have a corresponding lemma in the database, do a second pass to translate and insert those missing words!
+
+7. **Report**
    Tell the user how many words were successfully processed and added, and suggest they run `python learn.py` to practice!
