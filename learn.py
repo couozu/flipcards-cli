@@ -227,8 +227,33 @@ def run_learning():
         total_count = c.fetchone()[0]
         
         if due_count == 0:
+            print("\n" + "=" * 40)
             print("Great! No more words to review for today.")
             print(f"Total words in database: {total_count}")
+            
+            c.execute("SELECT MIN(next_review) FROM words WHERE passive_ignored = 0")
+            min_p = c.fetchone()[0]
+            c.execute("SELECT MIN(active_next_review) FROM words WHERE is_active_unlocked = 1 AND active_ignored = 0")
+            min_a = c.fetchone()[0]
+            times = []
+            if min_p: times.append(min_p)
+            if min_a: times.append(min_a)
+            if times:
+                from datetime import datetime as dt_mod
+                next_time_iso = min(times)
+                next_dt = dt_mod.fromisoformat(next_time_iso)
+                
+                now_dt = dt_mod.now()
+                if next_dt.date() == now_dt.date():
+                    time_str = f"today at {next_dt.strftime('%H:%M')}"
+                elif (next_dt.date() - now_dt.date()).days == 1:
+                    time_str = f"tomorrow at {next_dt.strftime('%H:%M')}"
+                else:
+                    time_str = next_dt.strftime('%Y-%m-%d %H:%M')
+                    
+                print(f"\nNext card is due: {time_str}")
+            
+            stats.show_stats()
             print("Press any key to exit...")
             get_char()
             break
