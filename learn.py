@@ -9,7 +9,7 @@ import random
 import stats
 
 # Configuration
-FIRST_REVIEW_INTERVAL_HOURS = 12
+REVIEW_INTERVAL_HOURS = 12
 import time
 
 DB_FILE = "/Users/couozu/.gemini/antigravity/scratch/spanish_learning/vocab.db"
@@ -160,7 +160,7 @@ def update_word(conn, word_id, known, is_active=False):
         
         if known:
             if reps == 0:
-                interval = FIRST_REVIEW_INTERVAL_HOURS / 24.0
+                interval = REVIEW_INTERVAL_HOURS / 24.0
             elif reps == 1:
                 interval = 6
             else:
@@ -176,15 +176,15 @@ def update_word(conn, word_id, known, is_active=False):
         next_review = now + timedelta(days=interval)
         
         c.execute('''UPDATE words 
-                     SET next_review = ?, interval = ?, repetitions = ?, ease_factor = ?, is_active_unlocked = ? 
-                     WHERE id = ?''', (next_review.isoformat(), interval, reps, ease, unlocked, word_id))
+                     SET next_review = ?, interval = ?, repetitions = ?, ease_factor = ?, is_active_unlocked = ?, last_review = ? 
+                     WHERE id = ?''', (next_review.isoformat(), interval, reps, ease, unlocked, now.isoformat(), word_id))
     else:
         c.execute("SELECT active_interval, active_repetitions, active_ease_factor FROM words WHERE id = ?", (word_id,))
         interval, reps, ease = c.fetchone()
         
         if known:
             if reps == 0:
-                interval = FIRST_REVIEW_INTERVAL_HOURS / 24.0
+                interval = REVIEW_INTERVAL_HOURS / 24.0
             elif reps == 1:
                 interval = 6
             else:
@@ -198,8 +198,8 @@ def update_word(conn, word_id, known, is_active=False):
         next_review = now + timedelta(days=interval)
         
         c.execute('''UPDATE words 
-                     SET active_next_review = ?, active_interval = ?, active_repetitions = ?, active_ease_factor = ? 
-                     WHERE id = ?''', (next_review.isoformat(), interval, reps, ease, word_id))
+                     SET active_next_review = ?, active_interval = ?, active_repetitions = ?, active_ease_factor = ?, active_last_review = ? 
+                     WHERE id = ?''', (next_review.isoformat(), interval, reps, ease, now.isoformat(), word_id))
                  
     c.execute('''INSERT INTO history (word_id, reviewed_at, result) 
                  VALUES (?, ?, ?)''', (word_id, now.isoformat(), ('active_' if is_active else 'passive_') + ('known' if known else 'unknown')))
