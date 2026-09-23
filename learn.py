@@ -276,7 +276,7 @@ def run_learning():
         print("-" * 40)
         print(f"\n{front}\n")
         print("-" * 40)
-        print("[Space] - Show translation | [D] - Delete | [<-] Undo | [Q] - Quit")
+        print("[Space] - Show translation | [K] - Know | [D] - Delete | [<-] Undo | [Q] - Quit")
         
         card_start_time = time.time()
         
@@ -284,6 +284,12 @@ def run_learning():
         while True:
             ch = get_char().lower()
             if ch == ' ':
+                break
+            elif ch in ('k', 'л'): # K = Know
+                save_state_for_undo(conn, word_id, is_active, undo_stack)
+                update_word(conn, word_id, known=True, is_active=bool(is_active))
+                record_time_spent(conn, int(time.time() - card_start_time))
+                answered_early = True
                 break
             elif ch in ('d', 'в'):
                 save_state_for_undo(conn, word_id, is_active, undo_stack)
