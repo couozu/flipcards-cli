@@ -17,46 +17,91 @@ def get_char():
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
 
-def update_word(conn, word_id, known):
+
+def check_and_migrate_db(conn):
     c = conn.cursor()
-    c.execute("SELECT interval, repetitions, ease_factor FROM words WHERE id = ?", (word_id,))
-    interval, reps, ease = c.fetchone()
-    
-    if known:
-        if reps == 0:
-            interval = 1
-        elif reps == 1:
-            interval = 6
-        else:
-            interval = interval * ease
-        reps += 1
-    else:
-        reps = 0
-        interval = 1
-        ease = max(1.3, ease - 0.2)
-        
-    next_review_iso = (datetime.now() + timedelta(days=interval)).isoformat()
+    c.execute("PRAGMA table_info(words)")
+    columns = [col[1] for col in c.fetchall()]
+    if "is_active_unlocked" not in columns:
+        c.execute("ALTER TABLE words ADD COLUMN is_active_unlocked INTEGER DEFAULT 0")
+        c.execute("ALTER TABLE words ADD COLUMN active_next_review TEXT")
+        c.execute("ALTER TABLE words ADD COLUMN active_interval REAL DEFAULT 0")
+        c.execute("ALTER TABLE words ADD COLUMN active_repetitions INTEGER DEFAULT 0")
+        c.execute("ALTER TABLE words ADD COLUMN active_ease_factor REAL DEFAULT 2.5")
+        conn.commit()
+
+def update_word(conn, word_id, known, is_active=False):
+    c = conn.cursor()
     now_iso = datetime.now().isoformat()
     
-    c.execute('''UPDATE words 
-                 SET next_review = ?, interval = ?, repetitions = ?, ease_factor = ? 
-                 WHERE id = ?''', (next_review_iso, interval, reps, ease, word_id))
+    if not is_active:
+        c.execute("SELECT interval, repetitions, ease_factor, is_active_unlocked FROM words WHERE id = ?", (word_id,))
+        interval, reps, ease, unlocked = c.fetchone()
+        
+        if known:
+            if reps == 0:
+                interval = 1
+            elif reps == 1:
+                interval = 6
+            else:
+                interval = interval * ease
+            reps += 1
+        else:
+            reps = 0
+            interval = 1
+            ease = max(1.3, ease - 0.2)
+            
+        next_review_iso = (datetime.now() + timedelta(days=interval)).isoformat()
+        
+        c.execute('''UPDATE words 
+                     SET next_review = ?, interval = ?, repetitions = ?, ease_factor = ? 
+                     WHERE id = ?''', (next_review_iso, interval, reps, ease, word_id))
+                     
+        if reps >= 3 and not unlocked:
+            c.execute("UPDATE words SET is_active_unlocked = 1, active_next_review = ? WHERE id = ?", (now_iso, word_id))
+    else:
+        c.execute("SELECT active_interval, active_repetitions, active_ease_factor FROM words WHERE id = ?", (word_id,))
+        interval, reps, ease = c.fetchone()
+        
+        if known:
+            if reps == 0:
+                interval = 1
+            elif reps == 1:
+                interval = 6
+            else:
+                interval = interval * ease
+            reps += 1
+        else:
+            reps = 0
+            interval = 1
+            ease = max(1.3, ease - 0.2)
+            
+        next_review_iso = (datetime.now() + timedelta(days=interval)).isoformat()
+        
+        c.execute('''UPDATE words 
+                     SET active_next_review = ?, active_interval = ?, active_repetitions = ?, active_ease_factor = ? 
+                     WHERE id = ?''', (next_review_iso, interval, reps, ease, word_id))
                  
     c.execute('''INSERT INTO history (word_id, reviewed_at, result) 
-                 VALUES (?, ?, ?)''', (word_id, now_iso, 'known' if known else 'unknown'))
+                 VALUES (?, ?, ?)''', (word_id, now_iso, ('active_' if is_active else 'passive_') + ('known' if known else 'unknown')))
                  
     conn.commit()
 
 def run_learning():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
+    check_and_migrate_db(conn)
     
     while True:
         os.system('clear')
         now_iso = datetime.now().isoformat()
         
         # Get count of words due today
-        c.execute("SELECT COUNT(*) FROM words WHERE next_review <= ?", (now_iso,))
+        c.execute('''SELECT count(*) FROM (
+            SELECT id FROM words WHERE next_review <= ?
+            UNION ALL
+            SELECT id FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ?
+        )''', (now_iso, now_iso))
         due_count = c.fetchone()[0]
         
         # Total words
@@ -70,20 +115,30 @@ def run_learning():
             get_char()
             break
             
-        c.execute("SELECT id, word, hint, translation FROM words WHERE next_review <= ? ORDER BY RANDOM() LIMIT 1", (now_iso,))
+        c.execute('''
+            SELECT * FROM (
+                SELECT id, word, hint, translation, 0 as is_active FROM words WHERE next_review <= ?
+                UNION ALL
+                SELECT id, word, hint, translation, 1 as is_active FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ?
+            ) ORDER BY RANDOM() LIMIT 1
+        ''', (now_iso, now_iso))
         word_data = c.fetchone()
         
         if not word_data:
             break
             
-        word_id, word, hint, translation = word_data
+        word_id, db_word, hint, db_translation, is_active = word_data
+        front = db_translation if is_active else db_word
+        back = db_word if is_active else db_translation
+        mode_str = "[ACTIVE (Translate to Spanish)] " if is_active else "[PASSIVE (Translate to Russian)] "
+
         
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
         if hint:
-            print(f"\n{word} (hint: {hint})\n")
+            print(f"\n{mode_str}{front} (hint: {hint})\n")
         else:
-            print(f"\n{word}\n")
+            print(f"\n{mode_str}{front}\n")
         print("-" * 40)
         print("[Space] - Show translation | [Left/Right] - Don't know/Know | [E] - Edit | [Q] - Quit")
         
@@ -96,28 +151,30 @@ def run_learning():
             if ch == ' ':
                 break
             elif ch in LEFT_KEYS:
-                update_word(conn, word_id, known=False)
+                update_word(conn, word_id, known=False, is_active=bool(is_active))
                 answered_early = True
                 break
             elif ch in RIGHT_KEYS:
-                update_word(conn, word_id, known=True)
+                update_word(conn, word_id, known=True, is_active=bool(is_active))
                 answered_early = True
                 break
             elif ch == 'e':
                 # Restore terminal to normal to accept input
                 termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, termios.tcgetattr(sys.stdin.fileno()))
-                print(f"\nCurrent word: {word}")
-                new_word = input(f"New word (leave blank to keep '{word}'): ").strip()
-                print(f"Current translation: {translation}")
-                new_trans = input(f"New translation (leave blank to keep '{translation}'): ").strip()
+                print(f"\nCurrent Spanish: {db_word}")
+                new_word = input(f"New Spanish (leave blank to keep '{db_word}'): ").strip()
+                print(f"Current translation: {db_translation}")
+                new_trans = input(f"New translation (leave blank to keep '{db_translation}'): ").strip()
                 
                 if new_word:
                     c.execute("UPDATE words SET word = ? WHERE id = ?", (new_word, word_id))
-                    word = new_word
+                    db_word = new_word
                 if new_trans:
                     c.execute("UPDATE words SET translation = ? WHERE id = ?", (new_trans, word_id))
-                    translation = new_trans
+                    db_translation = new_trans
                 conn.commit()
+                front = db_translation if is_active else db_word
+                back = db_word if is_active else db_translation
                 print("\nSaved! Press Space to show translation or continue.")
                 
             elif ch.isdigit():
@@ -136,9 +193,9 @@ def run_learning():
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
         if hint:
-            print(f"\n{word} (hint: {hint})  —  {translation}\n")
+            print(f"\n{mode_str}{front} (hint: {hint})  —  {back}\n")
         else:
-            print(f"\n{word}  —  {translation}\n")
+            print(f"\n{mode_str}{front}  —  {back}\n")
         print("-" * 40)
         
         print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [E] - Edit | [Q] - Quit")
@@ -146,20 +203,22 @@ def run_learning():
         while True:
             ch = get_char().lower()
             if ch in LEFT_KEYS:
-                update_word(conn, word_id, known=False)
+                update_word(conn, word_id, known=False, is_active=bool(is_active))
                 break
             elif ch in RIGHT_KEYS:
-                update_word(conn, word_id, known=True)
+                update_word(conn, word_id, known=True, is_active=bool(is_active))
                 break
             elif ch == 'e':
                 termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, termios.tcgetattr(sys.stdin.fileno()))
-                print(f"\nCurrent translation: {translation}")
-                new_trans = input(f"New translation (leave blank to keep '{translation}'): ").strip()
+                print(f"\nCurrent translation: {db_translation}")
+                new_trans = input(f"New translation (leave blank to keep '{db_translation}'): ").strip()
                 if new_trans:
                     c.execute("UPDATE words SET translation = ? WHERE id = ?", (new_trans, word_id))
-                    translation = new_trans
+                    db_translation = new_trans
                     conn.commit()
-                    print(f"Saved: {translation}")
+                    front = db_translation if is_active else db_word
+                    back = db_word if is_active else db_translation
+                    print(f"Saved: {db_translation}")
                 print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [Q] - Quit")
             elif ch == 'q' or ch == '\x03':
                 conn.close()
