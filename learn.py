@@ -71,8 +71,8 @@ def record_time_spent(conn, delta_seconds):
     c.execute("UPDATE daily_stats SET time_spent_seconds = time_spent_seconds + ?, cards_reviewed = cards_reviewed + 1 WHERE date = ?", (delta_seconds, today_str))
     conn.commit()
 
-def show_stats(conn):
-    os.system('clear')
+
+def get_stats_header(conn, due_count):
     c = conn.cursor()
     today_str = datetime.now().strftime("%Y-%m-%d")
     
@@ -95,20 +95,9 @@ def show_stats(conn):
     c.execute("SELECT COUNT(*) FROM words WHERE is_active_unlocked = 1 AND (active_ignored = 1 OR active_repetitions >= 3)")
     active_mastered = c.fetchone()[0]
     
-    print("\n--- 📊 STATISTICS ---\n")
-    print(f"Total Words in DB: {total_active_vocab}")
-    print(f"Mastered (Passive): {passive_mastered} words")
-    print(f"Mastered (Active):  {active_mastered} words")
-    print("-" * 30)
-    print(f"Cards Reviewed Today: {today_cards}")
-    print(f"Time Spent Today:     {format_time(today_time)}")
-    print("-" * 30)
-    print(f"Total Cards Reviewed: {total_cards}")
-    print(f"Total Time Spent:     {format_time(total_time)}")
-    print("\nPress [Space] to continue...")
-    while True:
-        if get_char() == ' ':
-            break
+    line1 = f"Due: {due_count} | Done Today: {today_cards} ({format_time(today_time)}) | Total Done: {total_cards} ({format_time(total_time)})"
+    line2 = f"Mastered: {passive_mastered} pass, {active_mastered} act | Total Words: {total_active_vocab}"
+    return line1 + "\n" + line2
 
 def undo_last_action(conn, undo_stack):
     if not undo_stack:
@@ -269,11 +258,11 @@ def run_learning():
         back = spanish_with_article if is_active else russian_side
         
         # FRONT SCREEN
-        print(f"Left for today: {due_count} | Total words: {total_count}")
+        print(get_stats_header(conn, due_count))
         print("-" * 40)
         print(f"\n{front}\n")
         print("-" * 40)
-        print("[Space] - Show translation | [D] - Delete | [0-9] - Stats | [<-] Undo | [Q] - Quit")
+        print("[Space] - Show translation | [D] - Delete | [<-] Undo | [Q] - Quit")
         
         card_start_time = time.time()
         
@@ -287,10 +276,6 @@ def run_learning():
                 col = "active_ignored" if is_active else "passive_ignored"
                 c.execute(f"UPDATE words SET {col} = 1 WHERE id = ?", (word_id,))
                 conn.commit()
-                answered_early = True
-                break
-            elif ch.isdigit():
-                show_stats(conn)
                 answered_early = True
                 break
             elif ch == '\x1b[d': # Left Arrow
@@ -310,7 +295,7 @@ def run_learning():
 
         # BACK SCREEN
         os.system('clear')
-        print(f"Left for today: {due_count} | Total words: {total_count}")
+        print(get_stats_header(conn, due_count))
         print("-" * 40)
         if is_active:
             print(f"\n{front}  —  {back}\n")
@@ -319,7 +304,7 @@ def run_learning():
             print(f"\n{front}  —  {back}{article_tag}\n")
         print("-" * 40)
         
-        print("[Space] - Don't know | [K] - Know | [D] - Delete | [E] - Edit | [0-9] - Stats | [<-] Undo | [Q] Quit")
+        print("[Space] - Don't know | [K] - Know | [D] - Delete | [E] - Edit | [<-] Undo | [Q] Quit")
         
         while True:
             ch = get_char().lower()
@@ -345,9 +330,6 @@ def run_learning():
                     force_next_word = (undone_id, undone_active)
                     print("\nUndo successful! Reloading...")
                     time.sleep(0.5)
-                break
-            elif ch.isdigit():
-                show_stats(conn)
                 break
             elif ch == 'e':
                 termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, termios.tcgetattr(sys.stdin.fileno()))
