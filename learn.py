@@ -70,7 +70,7 @@ def run_learning():
             get_char()
             break
             
-        c.execute("SELECT id, word, hint, translation FROM words WHERE next_review <= ? ORDER BY next_review ASC LIMIT 1", (now_iso,))
+        c.execute("SELECT id, word, hint, translation FROM words WHERE next_review <= ? ORDER BY RANDOM() LIMIT 1", (now_iso,))
         word_data = c.fetchone()
         
         if not word_data:
