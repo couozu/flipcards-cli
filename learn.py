@@ -132,15 +132,13 @@ def run_learning():
         word_id, db_word, hint, db_translation, is_active, freq = word_data
         front = db_translation if is_active else db_word
         back = db_word if is_active else db_translation
-        mode_str = "[ACTIVE (Translate to Spanish)] " if is_active else "[PASSIVE (Translate to Russian)] "
-
         
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
         if hint:
-            print(f"\n{mode_str}{front} (hint: {hint})\n")
+            print(f"\n{front} (hint: {hint})\n")
         else:
-            print(f"\n{mode_str}{front}\n")
+            print(f"\n{front}\n")
         print("-" * 40)
         print("[Space] - Show translation | [Left/Right] - Don't know/Know | [E] - Edit | [Q] - Quit")
         
@@ -195,9 +193,9 @@ def run_learning():
         print(f"Left for today: {due_count} | Total words: {total_count}")
         print("-" * 40)
         if hint:
-            print(f"\n{mode_str}{front} (hint: {hint})  —  {back}\n")
+            print(f"\n{front} (hint: {hint})  —  {back}\n")
         else:
-            print(f"\n{mode_str}{front}  —  {back}\n")
+            print(f"\n{front}  —  {back}\n")
         print("-" * 40)
         
         print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [E] - Edit | [Q] - Quit")
