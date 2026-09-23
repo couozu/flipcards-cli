@@ -102,6 +102,9 @@ def get_stats_header(conn, due_passive, due_active):
     c.execute("SELECT COUNT(*) FROM words WHERE active_ignored = 1 OR (is_active_unlocked = 1 AND active_repetitions >= 3)")
     active_mastered = c.fetchone()[0]
     
+    c.execute("UPDATE daily_stats SET passive_mastered = ?, active_mastered = ? WHERE date = ?", (passive_mastered, active_mastered, today_str))
+    conn.commit()
+    
     return f"Due: {due_passive}p/{due_active}a | Mast: {passive_mastered}p/{active_mastered}a | Today: {today_cards}({format_time(today_time)}) | Tot: {total_cards}({format_time(total_time)}) | DB: {total_active_vocab}" 
 
 def undo_last_action(conn, undo_stack):
