@@ -15,18 +15,20 @@ logging.basicConfig(filename='app.log', level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 def get_char():
+    import os
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
-        tty.setraw(sys.stdin.fileno())
-        ch = sys.stdin.read(1)
-        if ch == '\x1b':
-            # Read all remaining characters in the escape sequence
-            while select.select([sys.stdin], [], [], 0.05)[0]:
-                ch += sys.stdin.read(1)
+        tty.setraw(fd)
+        # Read at least one byte
+        data = os.read(fd, 1)
+        # If it's an escape sequence, read the rest quickly
+        if data == b'\x1b':
+            while select.select([fd], [], [], 0.1)[0]:
+                data += os.read(fd, 1024)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    return ch
+    return data.decode('utf-8', errors='ignore')
 
 def format_time(seconds):
     if seconds < 60:
