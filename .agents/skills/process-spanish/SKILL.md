@@ -22,7 +22,7 @@ This skill instructs you on how to extract vocabulary from a Spanish text file, 
    - Adjectives must be converted to **masculine, singular** form (e.g. `chiquitas` -> `chiquito`).
    - Nouns must be converted to **singular** form (e.g. `las tonterías` -> `la tontería`, `problemas` -> `problema`).
    - **EXCLUDE proper names**: Do NOT include character names (Tokio, Arturo, Mónica), place names (Madrid, París, Helsinki), brand names (Seat), or any other proper nouns. Only include common Spanish vocabulary words.
-   - **EXCLUDE numbers and units**: Do not include standalone numbers (92, 2400) or units (km/h).
+   - **EXCLUDE numbers and units**: Do not include standalone numbers (92, 2400) or written numbers (uno, dos, tres), or units (km/h).
    
    Translate each lemmatized word into the user's preferred target language **based on the context** of the sentence it appeared in. 
    - *Handling Clashes/Homonyms*: If the exact same lemmatized Spanish word appears in multiple different contexts with completely different meanings (e.g., "banco" as a financial bank vs "banco" as a park bench), create separate entries for each meaning and provide a short `hint` in English or the target language to distinguish them (e.g. `hint: финансовое учреждение`). If there is only one meaning, leave the hint empty (`""`).
