@@ -30,6 +30,8 @@ def check_and_migrate_db(conn):
         c.execute("ALTER TABLE words ADD COLUMN active_ease_factor REAL DEFAULT 2.5")
     if "frequency" not in columns:
         c.execute("ALTER TABLE words ADD COLUMN frequency INTEGER DEFAULT 0")
+    if "is_ignored" not in columns:
+        c.execute("ALTER TABLE words ADD COLUMN is_ignored INTEGER DEFAULT 0")
     conn.commit()
 
 def update_word(conn, word_id, known, is_active=False):
@@ -100,14 +102,14 @@ def run_learning():
         
         # Get count of words due today
         c.execute('''SELECT count(*) FROM (
-            SELECT id FROM words WHERE next_review <= ?
+            SELECT id FROM words WHERE next_review <= ? AND is_ignored = 0
             UNION ALL
-            SELECT id FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ?
+            SELECT id FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ? AND is_ignored = 0
         )''', (now_iso, now_iso))
         due_count = c.fetchone()[0]
         
         # Total words
-        c.execute("SELECT COUNT(*) FROM words")
+        c.execute("SELECT COUNT(*) FROM words WHERE is_ignored = 0")
         total_count = c.fetchone()[0]
         
         if due_count == 0:
@@ -119,9 +121,9 @@ def run_learning():
             
         c.execute('''
             SELECT * FROM (
-                SELECT id, word, hint, translation, 0 as is_active, frequency FROM words WHERE next_review <= ?
+                SELECT id, word, hint, translation, 0 as is_active, frequency FROM words WHERE next_review <= ? AND is_ignored = 0
                 UNION ALL
-                SELECT id, word, hint, translation, 1 as is_active, frequency FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ?
+                SELECT id, word, hint, translation, 1 as is_active, frequency FROM words WHERE is_active_unlocked = 1 AND active_next_review <= ? AND is_ignored = 0
             ) ORDER BY frequency DESC, RANDOM() LIMIT 1
         ''', (now_iso, now_iso))
         word_data = c.fetchone()
@@ -140,7 +142,7 @@ def run_learning():
         else:
             print(f"\n{front}\n")
         print("-" * 40)
-        print("[Space] - Show translation | [Left/Right] - Don't know/Know | [E] - Edit | [Q] - Quit")
+        print("[Space] - Show translation | [Left/Right] - Don't know/Know | [E] - Edit | [D] - Delete | [Q] - Quit")
         
         LEFT_KEYS = set("qwertasdfgzxcvbйцукенфывапячсми")
         RIGHT_KEYS = set("yuiophjklnmнгшщзхъролджэтьбю")
@@ -156,6 +158,11 @@ def run_learning():
                 break
             elif ch in RIGHT_KEYS:
                 update_word(conn, word_id, known=True, is_active=bool(is_active))
+                answered_early = True
+                break
+            elif ch == 'd':
+                c.execute("UPDATE words SET is_ignored = 1 WHERE id = ?", (word_id,))
+                conn.commit()
                 answered_early = True
                 break
             elif ch == 'e':
@@ -198,7 +205,7 @@ def run_learning():
             print(f"\n{front}  —  {back}\n")
         print("-" * 40)
         
-        print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [E] - Edit | [Q] - Quit")
+        print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [E] - Edit | [D] - Delete | [Q] - Quit")
         
         while True:
             ch = get_char().lower()
@@ -207,6 +214,10 @@ def run_learning():
                 break
             elif ch in RIGHT_KEYS:
                 update_word(conn, word_id, known=True, is_active=bool(is_active))
+                break
+            elif ch == 'd':
+                c.execute("UPDATE words SET is_ignored = 1 WHERE id = ?", (word_id,))
+                conn.commit()
                 break
             elif ch == 'e':
                 termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, termios.tcgetattr(sys.stdin.fileno()))
@@ -219,7 +230,7 @@ def run_learning():
                     front = db_translation if is_active else db_word
                     back = db_word if is_active else db_translation
                     print(f"Saved: {db_translation}")
-                print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [Q] - Quit")
+                print("[Left Half of Keyboard] - Don't know | [Right Half] - Know | [D] - Delete | [Q] - Quit")
             elif ch == 'q' or ch == '\x03':
                 conn.close()
                 return
