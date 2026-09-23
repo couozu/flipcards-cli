@@ -112,10 +112,11 @@ def show_stats(conn):
 
 def undo_last_action(conn, undo_stack):
     if not undo_stack:
-        return False
+        return None, None
         
     last_state = undo_stack.pop()
     word_id = last_state.pop('id')
+    is_active = last_state.pop('__is_active', False)
     
     c = conn.cursor()
     # Restore the row
@@ -134,14 +135,15 @@ def undo_last_action(conn, undo_stack):
     c.execute("UPDATE daily_stats SET cards_reviewed = max(0, cards_reviewed - 1) WHERE date = ?", (today_str,))
     
     conn.commit()
-    return True
+    return word_id, is_active
 
-def save_state_for_undo(conn, word_id, undo_stack):
+def save_state_for_undo(conn, word_id, is_active, undo_stack):
     c = conn.cursor()
     c.execute("SELECT * FROM words WHERE id = ?", (word_id,))
     row = c.fetchone()
     col_names = [description[0] for description in c.description]
     row_dict = dict(zip(col_names, row))
+    row_dict['__is_active'] = is_active
     undo_stack.append(row_dict)
 
 def update_word(conn, word_id, known, is_active=False):
@@ -206,6 +208,7 @@ def run_learning():
     check_and_migrate_db(conn)
     
     undo_stack = []
+    force_next_word = None
     
     while True:
         os.system('clear')
@@ -240,9 +243,22 @@ def run_learning():
         if not all_due:
             break
             
-        # Frequency is index 5
-        weights = [row[5] + 1 for row in all_due]
-        selected_row = random.choices(all_due, weights=weights, k=1)[0]
+        if force_next_word:
+            # find it in all_due
+            match = next((r for r in all_due if r[0] == force_next_word[0] and bool(r[4]) == force_next_word[1]), None)
+            if match:
+                selected_row = match
+            else:
+                # Fallback if not found (shouldn't happen)
+                weights = [row[5] + 1 for row in all_due]
+                selected_row = random.choices(all_due, weights=weights, k=1)[0]
+            force_next_word = None
+        else:
+            weights = [row[5] + 1 for row in all_due]
+            selected_row = random.choices(all_due, weights=weights, k=1)[0]
+
+            
+
         
         word_id, db_word, hint, db_translation, is_active, freq, article = selected_row
         
@@ -267,7 +283,7 @@ def run_learning():
             if ch == ' ':
                 break
             elif ch == 'd':
-                save_state_for_undo(conn, word_id, undo_stack)
+                save_state_for_undo(conn, word_id, is_active, undo_stack)
                 col = "active_ignored" if is_active else "passive_ignored"
                 c.execute(f"UPDATE words SET {col} = 1 WHERE id = ?", (word_id,))
                 conn.commit()
@@ -278,7 +294,9 @@ def run_learning():
                 answered_early = True
                 break
             elif ch == '\x1b[d': # Left Arrow
-                if undo_last_action(conn, undo_stack):
+                undone_id, undone_active = undo_last_action(conn, undo_stack)
+                if undone_id:
+                    force_next_word = (undone_id, undone_active)
                     print("\nUndo successful! Reloading...")
                     time.sleep(0.5)
                 answered_early = True
@@ -306,23 +324,25 @@ def run_learning():
         while True:
             ch = get_char().lower()
             if ch == ' ': # Space = Don't Know
-                save_state_for_undo(conn, word_id, undo_stack)
+                save_state_for_undo(conn, word_id, is_active, undo_stack)
                 update_word(conn, word_id, known=False, is_active=bool(is_active))
                 record_time_spent(conn, int(time.time() - card_start_time))
                 break
             elif ch == 'k': # K = Know
-                save_state_for_undo(conn, word_id, undo_stack)
+                save_state_for_undo(conn, word_id, is_active, undo_stack)
                 update_word(conn, word_id, known=True, is_active=bool(is_active))
                 record_time_spent(conn, int(time.time() - card_start_time))
                 break
             elif ch == 'd':
-                save_state_for_undo(conn, word_id, undo_stack)
+                save_state_for_undo(conn, word_id, is_active, undo_stack)
                 col = "active_ignored" if is_active else "passive_ignored"
                 c.execute(f"UPDATE words SET {col} = 1 WHERE id = ?", (word_id,))
                 conn.commit()
                 break
             elif ch == '\x1b[d': # Left Arrow
-                if undo_last_action(conn, undo_stack):
+                undone_id, undone_active = undo_last_action(conn, undo_stack)
+                if undone_id:
+                    force_next_word = (undone_id, undone_active)
                     print("\nUndo successful! Reloading...")
                     time.sleep(0.5)
                 break
@@ -334,7 +354,7 @@ def run_learning():
                 print(f"\nCurrent translation: {db_translation}")
                 new_trans = input(f"New translation (leave blank to keep '{db_translation}'): ").strip()
                 if new_trans:
-                    save_state_for_undo(conn, word_id, undo_stack)
+                    save_state_for_undo(conn, word_id, is_active, undo_stack)
                     c.execute("UPDATE words SET translation = ? WHERE id = ?", (new_trans, word_id))
                     db_translation = new_trans
                     conn.commit()
