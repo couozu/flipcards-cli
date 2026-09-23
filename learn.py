@@ -21,8 +21,12 @@ def get_char():
         tty.setraw(sys.stdin.fileno())
         ch = sys.stdin.read(1)
         if ch == '\x1b':
-            if select.select([sys.stdin], [], [], 0.05)[0]:
-                ch += sys.stdin.read(2)
+            # Give it a slightly longer timeout to catch full sequence
+            if select.select([sys.stdin], [], [], 0.1)[0]:
+                ch += sys.stdin.read(1)
+                if ch.endswith('[') or ch.endswith('O'):
+                    if select.select([sys.stdin], [], [], 0.1)[0]:
+                        ch += sys.stdin.read(1)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
