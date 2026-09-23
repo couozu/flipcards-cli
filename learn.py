@@ -6,6 +6,7 @@ import termios
 import select
 from datetime import datetime, timedelta
 import random
+import stats
 import time
 
 DB_FILE = "/Users/couozu/.gemini/antigravity/scratch/spanish_learning/vocab.db"
@@ -310,12 +311,15 @@ def run_learning():
                     answered_early = True
                     break
             elif ch in ('q', 'й', '\x03'):
-                pass
-            else:
-                logging.debug(f"Unhandled key pressed on BACK: {repr(ch)}")
-            if ch in ('q', 'й', '\x03'):
+                os.system('clear')
+                print("\nSession ended early.")
+                stats.show_stats()
+                print("Press any key to exit...")
+                get_char()
                 conn.close()
                 return
+            else:
+                logging.debug(f"Unhandled key pressed on BACK: {repr(ch)}")
 
         if answered_early:
             continue
@@ -380,12 +384,15 @@ def run_learning():
                 print("[Space] - Don't know | [K] - Know | [D] - Delete | [<-] Undo")
                 # Return terminal to raw mode (handled by next get_char)
             elif ch in ('q', 'й', '\x03'):
-                pass
-            else:
-                logging.debug(f"Unhandled key pressed on BACK: {repr(ch)}")
-            if ch in ('q', 'й', '\x03'):
+                os.system('clear')
+                print("\nSession ended early.")
+                stats.show_stats()
+                print("Press any key to exit...")
+                get_char()
                 conn.close()
                 return
+            else:
+                logging.debug(f"Unhandled key pressed on BACK: {repr(ch)}")
 
 if __name__ == "__main__":
     if not os.path.exists(DB_FILE):
