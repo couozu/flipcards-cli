@@ -63,6 +63,22 @@ def get_next_card():
     word_id, is_active, freq = selected_row
     
     # Get details
+    # Get word details and raw words
+    c = conn.cursor()
+    if not is_active:
+        c.execute('''SELECT s.id, r.id, s.word, r.word, wl.hints 
+                     FROM spanish_words s JOIN word_links wl ON s.id = wl.spanish_id 
+                     JOIN russian_words r ON wl.russian_id = r.id WHERE s.id = ? LIMIT 1''', (word_id,))
+    else:
+        c.execute('''SELECT s.id, r.id, s.word, r.word, wl.hints 
+                     FROM russian_words r JOIN word_links wl ON r.id = wl.russian_id 
+                     JOIN spanish_words s ON wl.spanish_id = s.id WHERE r.id = ? LIMIT 1''', (word_id,))
+    row = c.fetchone()
+    if row:
+        sp_id, ru_id, sp_text, ru_text, hints = row
+    else:
+        sp_id, ru_id, sp_text, ru_text, hints = 0, 0, "", "", ""
+        
     front, back, _, sp_word = learn.get_word_details(conn, word_id, is_active)
     
     # Get image url (only for passive cards, as requested by user)
@@ -85,7 +101,12 @@ def get_next_card():
             "front": front,
             "back": back,
             "sp_word": sp_word,
-            "image_url": image_url
+            "image_url": image_url,
+            "sp_id": sp_id,
+            "ru_id": ru_id,
+            "sp_text": sp_text,
+            "ru_text": ru_text,
+            "hints": hints
         }
     }
 
@@ -195,6 +216,29 @@ def api_upload():
         
         return jsonify({"status": "ok", "url": url})
     return jsonify({"status": "error"}), 400
+
+@app.route("/api/edit", methods=["POST"])
+def api_edit():
+    data = request.json
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    
+    sp_id = data.get("sp_id")
+    ru_id = data.get("ru_id")
+    new_sp = data.get("sp_text")
+    new_ru = data.get("ru_text")
+    new_hints = data.get("hints")
+    
+    if sp_id and new_sp:
+        c.execute("UPDATE spanish_words SET word = ? WHERE id = ?", (new_sp, sp_id))
+    if ru_id and new_ru:
+        c.execute("UPDATE russian_words SET word = ? WHERE id = ?", (new_ru, ru_id))
+    if sp_id and ru_id:
+        c.execute("UPDATE word_links SET hints = ? WHERE spanish_id = ? AND russian_id = ?", (new_hints, sp_id, ru_id))
+        
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "ok"})
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
