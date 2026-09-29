@@ -64,16 +64,13 @@ def get_next_card():
     # Get details
     front, back, _, sp_word = learn.get_word_details(conn, word_id, is_active)
     
-    # Get image url for both active and passive
+    # Get image url (only for passive cards, as requested by user)
     image_url = None
     if not is_active:
         c.execute("SELECT image_url FROM spanish_words WHERE id = ?", (word_id,))
-    else:
-        c.execute("SELECT s.image_url FROM word_links wl JOIN spanish_words s ON wl.spanish_id = s.id WHERE wl.russian_id = ? LIMIT 1", (word_id,))
-        
-    row = c.fetchone()
-    if row and row[0]:
-        image_url = row[0]
+        row = c.fetchone()
+        if row and row[0]:
+            image_url = row[0]
             
     stats = learn.get_stats_header(conn, due_passive, due_active)
     conn.close()
