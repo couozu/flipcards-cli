@@ -202,7 +202,7 @@
             
             // If active, speak front
             if (currentCard.is_active && currentCard.sp_word) {
-                speak(currentCard.sp_word);
+                
             }
         }
         
@@ -223,14 +223,14 @@
                     } else {
                         step = 2;
                         elBack.style.display = 'block';
-                        if (!currentCard.is_active && currentCard.sp_word) speak(currentCard.sp_word);
+                        if (!currentCard.is_active && currentCard.sp_word) 
                     }
                 }
             } else if (step === 1) {
                 if (key === ' ') {
                     step = 2;
                     elBack.style.display = 'block';
-                    if (!currentCard.is_active && currentCard.sp_word) speak(currentCard.sp_word);
+                    if (!currentCard.is_active && currentCard.sp_word) 
                 }
             } else if (step === 2) {
                 if (key === ' ') sendAction('space');
