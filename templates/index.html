@@ -222,6 +222,32 @@
                 sendAction('d');
                 return;
             }
+            if (key === 'e' || key === 'у') {
+                const newSp = prompt("Español:", currentCard.sp_text);
+                if (newSp === null) return;
+                
+                const newRu = prompt("Ruso:", currentCard.ru_text);
+                if (newRu === null) return;
+                
+                const newHints = prompt("Hints (contexto/pista):", currentCard.hints || "");
+                if (newHints === null) return;
+                
+                fetch('/api/edit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        sp_id: currentCard.sp_id,
+                        ru_id: currentCard.ru_id,
+                        sp_text: newSp,
+                        ru_text: newRu,
+                        hints: newHints
+                    })
+                }).then(() => {
+                    // Reload the current card
+                    loadNextCard();
+                });
+                return;
+            }
             
                         if (step === 0) {
                 if (key === ' ') {
