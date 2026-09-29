@@ -93,7 +93,10 @@
 </head>
 <body>
     <div id="drag-overlay">Suelta la imagen aquí</div>
-    <div id="stats">Cargando...</div>
+    <div id="stats" style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="stats-text">Cargando...</span>
+        <a href="/stats" style="color: #4CAF50; text-decoration: none; font-size: 0.9rem; border: 1px solid #4CAF50; padding: 2px 8px; border-radius: 4px;">📈 Progreso</a>
+    </div>
     
     <div id="main">
         <div id="front"></div>
