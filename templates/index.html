@@ -201,8 +201,8 @@
             }
             
             // If active, speak front
-            if (currentCard.is_active && currentCard.sp_word) {
-                
+            if (!currentCard.is_active && currentCard.sp_word) {
+                speak(currentCard.sp_word);
             }
         }
         
@@ -215,7 +215,7 @@
                 return;
             }
             
-            if (step === 0) {
+                        if (step === 0) {
                 if (key === ' ') {
                     if (currentCard.image_url) {
                         step = 1;
@@ -223,14 +223,14 @@
                     } else {
                         step = 2;
                         elBack.style.display = 'block';
-                        if (!currentCard.is_active && currentCard.sp_word) 
+                        if (currentCard.is_active && currentCard.sp_word) speak(currentCard.sp_word);
                     }
                 }
             } else if (step === 1) {
                 if (key === ' ') {
                     step = 2;
                     elBack.style.display = 'block';
-                    if (!currentCard.is_active && currentCard.sp_word) 
+                    if (currentCard.is_active && currentCard.sp_word) speak(currentCard.sp_word);
                 }
             } else if (step === 2) {
                 if (key === ' ') sendAction('space');
