@@ -177,9 +177,10 @@
         }
         
         function renderData(data) {
-            elStats.innerText = data.stats;
+            document.getElementById('stats-text').innerText = data.stats;
             if (data.done) {
-                elFront.innerText = "🎉 ¡Genial! No hay más palabras por repasar hoy!";
+                let nextStr = data.next_time ? `<br><br><span style="font-size: 1.2rem; color: #555;">Próxima revisión: ${data.next_time}</span>` : "";
+                elFront.innerHTML = "🎉 ¡Genial! No hay más palabras por repasar hoy!" + nextStr;
                 elImageCont.style.display = 'none';
                 elBack.style.display = 'none';
                 currentCard = null;

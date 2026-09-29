@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progreso</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            color: #333;
+        }
+        .header {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        .header a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Progreso de Aprendizaje</h1>
+        <a href="/">&larr; Volver</a>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="masteredChart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+        <canvas id="reviewedChart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+        <canvas id="timeChart"></canvas>
+    </div>
+
+    <script>
+        const data = {{ stats|tojson }};
+        
+        const labels = data.map(d => d.date);
+        
+        // Mastered Chart
+        new Chart(document.getElementById('masteredChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Palabras Dominadas (Pasivo)',
+                        data: data.map(d => d.passive_mastered),
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Palabras Dominadas (Activo)',
+                        data: data.map(d => d.active_mastered),
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Palabras Dominadas a lo largo del tiempo' }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Palabras' } }
+                }
+            }
+        });
+        
+        // Reviewed Chart
+        new Chart(document.getElementById('reviewedChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Tarjetas Repasadas por Día',
+                        data: data.map(d => d.cards_reviewed),
+                        backgroundColor: '#ffc107',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Actividad Diaria' }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Tarjetas' } }
+                }
+            }
+        });
+        
+        // Time Chart
+        new Chart(document.getElementById('timeChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Tiempo Dedicado (Minutos)',
+                        data: data.map(d => Math.round(d.time_spent_seconds / 60)),
+                        backgroundColor: '#17a2b8',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Tiempo de Estudio por Día' }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Minutos' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

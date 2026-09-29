@@ -86,8 +86,9 @@ def get_next_card(exclude_id=None, exclude_active=None):
     
     if not all_due:
         stats = learn.get_stats_header(conn, 0, 0)
+        next_time_str = learn.get_next_due_time_str(conn)
         conn.close()
-        return {"done": True, "stats": stats}
+        return {"done": True, "stats": stats, "next_time": next_time_str}
         
     def pick_row(candidates):
         filtered = [r for r in candidates if not (r[0] == exclude_id and r[1] == exclude_active)]
@@ -156,6 +157,26 @@ def get_next_card(exclude_id=None, exclude_active=None):
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/stats")
+def stats_page():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT date, time_spent_seconds, cards_reviewed, passive_mastered, active_mastered FROM daily_stats ORDER BY date ASC")
+    rows = c.fetchall()
+    
+    stats_data = []
+    for row in rows:
+        stats_data.append({
+            "date": row[0],
+            "time_spent_seconds": row[1] or 0,
+            "cards_reviewed": row[2] or 0,
+            "passive_mastered": row[3] or 0,
+            "active_mastered": row[4] or 0
+        })
+        
+    conn.close()
+    return render_template("stats.html", stats=stats_data)
 
 @app.route("/api/next", methods=["GET"])
 def api_next():

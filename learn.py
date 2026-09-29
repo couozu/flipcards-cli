@@ -523,3 +523,37 @@ def run_learning():
 
 if __name__ == "__main__":
     run_learning()
+
+def get_next_due_time_str(conn):
+    c = conn.cursor()
+    c.execute("SELECT MIN(next_review) FROM spanish_words WHERE passive_ignored = 0")
+    min_p = c.fetchone()[0]
+    c.execute('''SELECT MIN(active_next_review) FROM russian_words r 
+                 WHERE active_ignored = 0 AND NOT EXISTS (
+                     SELECT 1 FROM word_links wl JOIN spanish_words s ON wl.spanish_id = s.id 
+                     WHERE wl.russian_id = r.id AND s.repetitions < 3 AND s.passive_ignored = 0
+                 )''')
+    min_a = c.fetchone()[0]
+    times = []
+    if min_p: times.append(min_p)
+    if min_a: times.append(min_a)
+    if times:
+        next_time_iso = min(times)
+        next_dt = datetime.fromisoformat(next_time_iso)
+        now_dt = datetime.now()
+        
+        diff = next_dt - now_dt
+        hours, remainder = divmod(diff.total_seconds(), 3600)
+        minutes, _ = divmod(remainder, 60)
+        
+        countdown = f"in {int(hours)}h {int(minutes)}m" if hours > 0 or minutes > 0 else "very soon"
+        
+        if next_dt.date() == now_dt.date():
+            date_str = f"hoy a las {next_dt.strftime('%H:%M')}"
+        elif (next_dt.date() - now_dt.date()).days == 1:
+            date_str = f"mañana a las {next_dt.strftime('%H:%M')}"
+        else:
+            date_str = next_dt.strftime('%Y-%m-%d %H:%M')
+            
+        return f"{date_str} ({countdown})"
+    return "No hay más tarjetas"
