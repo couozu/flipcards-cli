@@ -304,6 +304,43 @@
             }
         });
 
+        
+        // Handle Paste event (Cmd+V)
+        document.addEventListener('paste', async (e) => {
+            if (!currentCard) return;
+            
+            // Check if there is a file in the clipboard
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            let file = null;
+            
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf("image") === 0) {
+                    file = items[i].getAsFile();
+                    break;
+                }
+            }
+            
+            if (!file) return; // Not an image paste, ignore
+            
+            e.preventDefault(); // Prevent pasting into the input field if focused
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('id', currentCard.id);
+            
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if (data.status === 'ok') {
+                currentCard.image_url = data.url;
+                elImage.src = data.url;
+                elImageCont.style.display = 'block';
+            }
+        });
+
         // Start
         loadNextCard();
     </script>
