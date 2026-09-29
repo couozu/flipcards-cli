@@ -191,10 +191,16 @@ def get_word_details(conn, word_id, is_active):
         return front, back, "", sp
 
 def undo_last_action(conn, undo_stack):
-    if not undo_stack:
+    c = conn.cursor()
+    c.execute("SELECT id, state_json FROM history WHERE state_json IS NOT NULL ORDER BY timestamp DESC LIMIT 1")
+    row = c.fetchone()
+    if not row:
         return None, None
         
-    last_state = undo_stack.pop()
+    hist_id, state_json = row
+    import json
+    last_state = json.loads(state_json)
+    
     word_id = last_state.pop('id')
     is_active = last_state.pop('is_active_mode')
     
@@ -204,16 +210,17 @@ def undo_last_action(conn, undo_stack):
     values = list(last_state.values())
     values.append(word_id)
     
-    c = conn.cursor()
     c.execute(f"UPDATE {table} SET {placeholders} WHERE id = ?", values)
-    c.execute("DELETE FROM history WHERE id = (SELECT MAX(id) FROM history WHERE word_id = ? AND is_active = ?)", (word_id, is_active))
+    c.execute("DELETE FROM history WHERE id = ?", (hist_id,))
     
+    from datetime import datetime
     today_str = datetime.now().strftime("%Y-%m-%d")
     c.execute("UPDATE daily_stats SET cards_reviewed = max(0, cards_reviewed - 1) WHERE date = ?", (today_str,))
     conn.commit()
     return word_id, is_active
     return word_id, is_active
 
+import json
 def save_state_for_undo(conn, word_id, is_active, undo_stack):
     c = conn.cursor()
     table = "russian_words" if is_active else "spanish_words"
@@ -222,7 +229,12 @@ def save_state_for_undo(conn, word_id, is_active, undo_stack):
     col_names = [description[0] for description in c.description]
     state_dict = dict(zip(col_names, row))
     state_dict['is_active_mode'] = is_active
-    undo_stack.append(state_dict)
+    
+    # Save to persistent history table
+    state_json = json.dumps(state_dict)
+    c.execute("INSERT INTO history (word_id, is_active, timestamp, action, state_json) VALUES (?, ?, datetime('now'), 'update', ?)",
+              (word_id, is_active, state_json))
+    conn.commit()
 
 
 def get_next_review_time(days_ahead):
