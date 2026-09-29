@@ -136,14 +136,17 @@
             if (!currentCard) return;
             const url = document.getElementById('img-input').value;
             if (!url) return;
-            await fetch('/api/image', {
+            const res = await fetch('/api/image', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({id: currentCard.id, url: url})
             });
+            const data = await res.json();
+            const finalUrl = data.url || url;
+            
             document.getElementById('img-input').value = '';
-            currentCard.image_url = url;
-            elImage.src = url;
+            currentCard.image_url = finalUrl;
+            elImage.src = finalUrl;
             elImageCont.style.display = 'block';
         }
 

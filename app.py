@@ -141,16 +141,34 @@ def api_speak():
         learn.speak(text)
     return jsonify({"status": "ok"})
 
+import shutil
+from flask import send_from_directory
+
 @app.route("/api/image", methods=["POST"])
 def api_image():
     data = request.json
     word_id = data.get("id")
     url = data.get("url")
+    
+    # Handle local files
+    if url.startswith("/") or url.startswith("file://") or url.startswith("~"):
+        local_path = url.replace("file://", "").strip()
+        local_path = os.path.expanduser(local_path)
+        
+        if os.path.exists(local_path):
+            os.makedirs("static/images", exist_ok=True)
+            ext = os.path.splitext(local_path)[1]
+            if not ext: ext = ".jpg"
+            new_filename = f"word_{word_id}{ext}"
+            new_path = os.path.join("static/images", new_filename)
+            shutil.copy2(local_path, new_path)
+            url = f"/static/images/{new_filename}"
+            
     conn = sqlite3.connect(DB_FILE)
     conn.execute("UPDATE spanish_words SET image_url = ? WHERE id = ?", (url, word_id))
     conn.commit()
     conn.close()
-    return jsonify({"status": "ok"})
+    return jsonify({"status": "ok", "url": url})
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
