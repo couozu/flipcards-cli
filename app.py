@@ -66,11 +66,11 @@ def get_next_card():
     # Get word details and raw words
     c = conn.cursor()
     if not is_active:
-        c.execute('''SELECT s.id, r.id, s.word, r.word, wl.hints 
+        c.execute('''SELECT s.id, r.id, s.word, r.word, wl.hint 
                      FROM spanish_words s JOIN word_links wl ON s.id = wl.spanish_id 
                      JOIN russian_words r ON wl.russian_id = r.id WHERE s.id = ? LIMIT 1''', (word_id,))
     else:
-        c.execute('''SELECT s.id, r.id, s.word, r.word, wl.hints 
+        c.execute('''SELECT s.id, r.id, s.word, r.word, wl.hint 
                      FROM russian_words r JOIN word_links wl ON r.id = wl.russian_id 
                      JOIN spanish_words s ON wl.spanish_id = s.id WHERE r.id = ? LIMIT 1''', (word_id,))
     row = c.fetchone()
@@ -234,7 +234,7 @@ def api_edit():
     if ru_id and new_ru:
         c.execute("UPDATE russian_words SET word = ? WHERE id = ?", (new_ru, ru_id))
     if sp_id and ru_id:
-        c.execute("UPDATE word_links SET hints = ? WHERE spanish_id = ? AND russian_id = ?", (new_hints, sp_id, ru_id))
+        c.execute("UPDATE word_links SET hint = ? WHERE spanish_id = ? AND russian_id = ?", (new_hints, sp_id, ru_id))
         
     conn.commit()
     conn.close()
