@@ -214,6 +214,14 @@
                 sendAction('undo');
                 return;
             }
+            if (key === 'k' || key === 'л') {
+                sendAction('k');
+                return;
+            }
+            if (key === 'd' || key === 'в') {
+                sendAction('d');
+                return;
+            }
             
                         if (step === 0) {
                 if (key === ' ') {
@@ -234,8 +242,6 @@
                 }
             } else if (step === 2) {
                 if (key === ' ') sendAction('space');
-                else if (key === 'k' || key === 'л') sendAction('k');
-                else if (key === 'd' || key === 'в') sendAction('d');
             }
         });
         
