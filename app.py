@@ -163,7 +163,8 @@ def api_image():
             new_filename = f"word_{word_id}{ext}"
             new_path = os.path.join("static/images", new_filename)
             shutil.copy2(local_path, new_path)
-            url = f"/static/images/{new_filename}"
+            import time
+            url = f"/static/images/{new_filename}?t={int(time.time())}"
             
     conn = sqlite3.connect(DB_FILE)
     conn.execute("UPDATE spanish_words SET image_url = ? WHERE id = ?", (url, word_id))
@@ -184,7 +185,8 @@ def api_upload():
         new_path = os.path.join("static/images", new_filename)
         
         file.save(new_path)
-        url = f"/static/images/{new_filename}"
+        import time
+        url = f"/static/images/{new_filename}?t={int(time.time())}"
         
         conn = sqlite3.connect(DB_FILE)
         conn.execute("UPDATE spanish_words SET image_url = ? WHERE id = ?", (url, word_id))
