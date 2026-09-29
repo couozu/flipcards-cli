@@ -212,6 +212,7 @@ def undo_last_action(conn, undo_stack):
     c.execute("UPDATE daily_stats SET cards_reviewed = max(0, cards_reviewed - 1) WHERE date = ?", (today_str,))
     conn.commit()
     return word_id, is_active
+    return word_id, is_active
 
 def save_state_for_undo(conn, word_id, is_active, undo_stack):
     c = conn.cursor()

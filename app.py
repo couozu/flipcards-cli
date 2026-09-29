@@ -13,6 +13,7 @@ DB_FILE = 'vocab.db'
 learn.speech_thread  # ensure it's alive
 
 undo_stack = []
+forced_next_card = None
 
 def get_next_card():
     conn = sqlite3.connect(DB_FILE)
@@ -128,8 +129,11 @@ def api_action():
     
     conn = sqlite3.connect(DB_FILE)
     
+    global forced_next_card
     if action == 'undo':
-        learn.undo_last_action(conn, undo_stack)
+        undid = learn.undo_last_action(conn, undo_stack)
+        if undid[0]:
+            forced_next_card = undid
     elif action in ('k', 'space', 'd'):
         learn.save_state_for_undo(conn, word_id, is_active, undo_stack)
         
