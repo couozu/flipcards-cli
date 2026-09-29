@@ -116,6 +116,27 @@
     </div>
 
     <script>
+        // Global error handler to display errors on screen instead of hanging silently
+        window.onerror = function(message, source, lineno, colno, error) {
+            document.body.innerHTML = `
+                <div style="color: red; background: #ffe6e6; padding: 20px; border: 1px solid red; font-family: monospace; text-align: left; margin: 20px;">
+                    <h3>JavaScript Error!</h3>
+                    <p><b>Message:</b> ${message}</p>
+                    <p><b>Source:</b> ${source}:${lineno}:${colno}</p>
+                    <pre>${error ? error.stack : ''}</pre>
+                </div>
+            `;
+            return true;
+        };
+        window.addEventListener('unhandledrejection', function(event) {
+            document.body.innerHTML = `
+                <div style="color: red; background: #ffe6e6; padding: 20px; border: 1px solid red; font-family: monospace; text-align: left; margin: 20px;">
+                    <h3>Unhandled Promise Rejection!</h3>
+                    <p><b>Reason:</b> ${event.reason}</p>
+                </div>
+            `;
+        });
+
         let currentCard = null;
         let step = 0; // 0=Front, 1=Image(if any), 2=Back
         let cardStartTime = 0;
