@@ -16,8 +16,45 @@ undo_stack = []
 forced_next_card = None
 
 def get_next_card():
+    global forced_next_card
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
+    
+    if forced_next_card:
+        word_id, is_active = forced_next_card
+        forced_next_card = None
+        
+        if not is_active:
+            c.execute('''SELECT s.id, r.id, s.word, r.word, wl.hint 
+                         FROM spanish_words s JOIN word_links wl ON s.id = wl.spanish_id 
+                         JOIN russian_words r ON wl.russian_id = r.id WHERE s.id = ? LIMIT 1''', (word_id,))
+        else:
+            c.execute('''SELECT s.id, r.id, s.word, r.word, wl.hint 
+                         FROM russian_words r JOIN word_links wl ON r.id = wl.russian_id 
+                         JOIN spanish_words s ON wl.spanish_id = s.id WHERE r.id = ? LIMIT 1''', (word_id,))
+        row = c.fetchone()
+        if row:
+            sp_id, ru_id, sp_text, ru_text, hints = row
+            front, back, _, sp_word = learn.get_word_details(conn, word_id, is_active)
+            
+            image_url = None
+            if not is_active:
+                c.execute("SELECT image_url FROM spanish_words WHERE id = ?", (word_id,))
+                img_row = c.fetchone()
+                if img_row and img_row[0]: image_url = img_row[0]
+                
+            stats_str = learn.get_stats_header(conn, 0, 0)
+            stats_str = stats_str.split("\n")[0].strip() if "\n" in stats_str else stats_str
+            
+            return {
+                "card": {
+                    "id": word_id, "is_active": is_active, "front": front, "back": back,
+                    "sp_word": sp_word, "image_url": image_url,
+                    "sp_id": sp_id, "ru_id": ru_id, "sp_text": sp_text, "ru_text": ru_text, "hints": hints
+                },
+                "stats": stats_str,
+                "done": False
+            }
     
     now = datetime.now().replace(microsecond=0).isoformat().replace('T', ' ')
     now_t = now.replace(' ', 'T')
