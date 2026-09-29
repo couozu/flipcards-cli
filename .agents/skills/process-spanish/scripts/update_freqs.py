@@ -40,10 +40,10 @@ def main():
     c = conn.cursor()
 
     # Ensure column exists
-    c.execute("PRAGMA table_info(words)")
+    c.execute("PRAGMA table_info(spanish_words)")
     columns = [col[1] for col in c.fetchall()]
     if "frequency" not in columns:
-        c.execute("ALTER TABLE words ADD COLUMN frequency INTEGER DEFAULT 0")
+        c.execute("ALTER TABLE spanish_words ADD COLUMN frequency INTEGER DEFAULT 0")
 
     updated = 0
     for word, raws in word_to_raw.items():
@@ -55,7 +55,7 @@ def main():
             
         if freq > 0:
             # We add to the existing frequency so it's cumulative across episodes!
-            c.execute("UPDATE words SET frequency = frequency + ? WHERE word = ?", (freq, word))
+            c.execute("UPDATE spanish_words SET frequency = frequency + ? WHERE word = ?", (freq, word))
             updated += 1
 
     conn.commit()
