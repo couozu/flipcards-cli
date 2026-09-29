@@ -170,5 +170,28 @@ def api_image():
     conn.close()
     return jsonify({"status": "ok", "url": url})
 
+@app.route("/api/upload", methods=["POST"])
+def api_upload():
+    file = request.files.get("file")
+    word_id = request.form.get("id")
+    
+    if file and word_id:
+        os.makedirs("static/images", exist_ok=True)
+        ext = os.path.splitext(file.filename)[1]
+        if not ext: ext = ".jpg"
+        new_filename = f"word_{word_id}{ext}"
+        new_path = os.path.join("static/images", new_filename)
+        
+        file.save(new_path)
+        url = f"/static/images/{new_filename}"
+        
+        conn = sqlite3.connect(DB_FILE)
+        conn.execute("UPDATE spanish_words SET image_url = ? WHERE id = ?", (url, word_id))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({"status": "ok", "url": url})
+    return jsonify({"status": "error"}), 400
+
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
