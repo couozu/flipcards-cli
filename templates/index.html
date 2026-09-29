@@ -260,8 +260,30 @@
             if (!currentCard) return;
             
             const file = e.dataTransfer.files[0];
-            if (!file || !file.type.startsWith('image/')) {
+            
+            if (!file) {
+                // User dragged an image from another browser tab
+                const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+                if (url) {
+                    document.getElementById('img-input').value = url;
+                    saveImage();
+                    return;
+                }
+                const html = e.dataTransfer.getData('text/html');
+                if (html) {
+                    const match = html.match(/src=["'](.*?)["']/);
+                    if (match && match[1]) {
+                        document.getElementById('img-input').value = match[1];
+                        saveImage();
+                        return;
+                    }
+                }
                 alert('Por favor suelta un archivo de imagen.');
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                alert('El archivo no es una imagen reconocida.');
                 return;
             }
             
