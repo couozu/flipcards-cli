@@ -15,7 +15,7 @@ learn.speech_thread  # ensure it's alive
 undo_stack = []
 forced_next_card = None
 
-def get_next_card():
+def get_next_card(exclude_id=None, exclude_active=None):
     global forced_next_card
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
@@ -89,14 +89,19 @@ def get_next_card():
         conn.close()
         return {"done": True, "stats": stats}
         
+    def pick_row(candidates):
+        filtered = [r for r in candidates if not (r[0] == exclude_id and r[1] == exclude_active)]
+        if not filtered:
+            filtered = candidates
+        weights = [r[2] + 1 for r in filtered]
+        return random.choices(filtered, weights=weights, k=1)[0]
+        
     # Prioritize active
     active_due_only = [row for row in all_due if row[1] == 1]
     if active_due_only:
-        weights = [row[2] + 1 for row in active_due_only]
-        selected_row = random.choices(active_due_only, weights=weights, k=1)[0]
+        selected_row = pick_row(active_due_only)
     else:
-        weights = [row[2] + 1 for row in all_due]
-        selected_row = random.choices(all_due, weights=weights, k=1)[0]
+        selected_row = pick_row(all_due)
         
     word_id, is_active, freq = selected_row
     
@@ -195,7 +200,7 @@ def api_action():
             conn.commit()
             
     conn.close()
-    return jsonify(get_next_card())
+    return jsonify(get_next_card(exclude_id=word_id, exclude_active=is_active))
 
 @app.route("/api/speak", methods=["POST"])
 def api_speak():
