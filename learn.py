@@ -252,7 +252,7 @@ def get_next_review_time(days_ahead):
 
 def update_word(conn, word_id, known, is_active=False):
     c = conn.cursor()
-    now = datetime.now()
+    now = datetime.now().replace(microsecond=0)
     
     if is_active:
         c.execute("SELECT active_interval, active_repetitions, active_ease_factor FROM russian_words WHERE id = ?", (word_id,))
