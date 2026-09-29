@@ -24,7 +24,7 @@ def speech_worker():
                 pass
             
         try:
-            current_speech_proc = subprocess.Popen(["say", "-v", "Mónica", text], stderr=subprocess.DEVNULL)
+            current_speech_proc = subprocess.Popen(["say", "-v", "Paulina", text], stderr=subprocess.DEVNULL)
         except:
             try:
                 current_speech_proc = subprocess.Popen(["say", text], stderr=subprocess.DEVNULL)
